@@ -10,6 +10,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.security.identity.DeviceResponseParser
 import com.android.mdl.appreader.R
@@ -19,6 +21,7 @@ import com.android.mdl.appreader.transfer.TransferManager
 import com.android.mdl.appreader.util.FormatUtil
 import com.android.mdl.appreader.util.KeysAndCertificates
 import com.android.mdl.appreader.util.TransferStatus
+import com.android.mdl.appreader.viewModel.ShowDocumentViewModel
 import org.jetbrains.anko.attr
 
 
@@ -42,6 +45,7 @@ class ShowDocumentFragment : Fragment() {
     private val binding get() = _binding!!
     private var portraitBytes: ByteArray? = null
     private lateinit var transferManager: TransferManager
+    private lateinit var viewModel : ShowDocumentViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,6 +54,7 @@ class ShowDocumentFragment : Fragment() {
 
         _binding = FragmentShowDocumentBinding.inflate(inflater, container, false)
         transferManager = TransferManager.getInstance(requireContext())
+        viewModel = ViewModelProvider(this).get(ShowDocumentViewModel::class.java)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
 
         return binding.root
@@ -101,7 +106,7 @@ class ShowDocumentFragment : Fragment() {
                 ShowDocumentFragmentDirections.actionShowDocumentToRequestOptions(true)
             )
         }
-        transferManager.getTransferStatus().observe(viewLifecycleOwner, {
+        transferManager.getTransferStatus().observe(viewLifecycleOwner) {
             when (it) {
                 TransferStatus.ENGAGED -> {
                     Log.d(LOG_TAG, "Device engagement received.")
@@ -111,6 +116,7 @@ class ShowDocumentFragment : Fragment() {
                 }
                 TransferStatus.RESPONSE -> {
                     Log.d(LOG_TAG, "Device response received.")
+                    registerResponseOnServer()
                 }
                 TransferStatus.DISCONNECTED -> {
                     Log.d(LOG_TAG, "Device disconnected received.")
@@ -132,7 +138,7 @@ class ShowDocumentFragment : Fragment() {
                     hideButtons()
                 }
             }
-        })
+        }
     }
 
     private fun hideButtons() {
@@ -226,6 +232,16 @@ class ShowDocumentFragment : Fragment() {
             )
             findNavController().navigate(R.id.action_ShowDocument_to_RequestOptions)
         }
+    }
+
+    private fun registerResponseOnServer() {
+        viewModel.sendDeviceActivity().observe(viewLifecycleOwner, Observer {
+            if(it.equals("SUCCESS", true)) {
+                Log.d(LOG_TAG, "Response received from the Server")
+            } else {
+                Log.e(LOG_TAG,"Error while receiving response from server : $it")
+            }
+        })
     }
 
     override fun onDestroyView() {
