@@ -206,7 +206,21 @@ class DeviceEngagementFragment : Fragment() {
     }
 
     private fun onDeviceEngagementReceived() {
-        if (transferManager.availableMdocAddresses?.size == 1) {
+        val availableAddressesSize = transferManager.availableMdocAddresses?.size ?: 0
+        if( availableAddressesSize > 0) {
+            val availableMdocAddressList = transferManager.availableMdocAddresses?.toList()
+            val mDocAddress = availableMdocAddressList?.get(0)
+            mDocAddress?.let {
+                transferManager.setMdocAddress(it)
+                findNavController().navigate(
+                    DeviceEngagementFragmentDirections.actionScanDeviceEngagementToTransfer(
+                        args.requestDocumentList
+                    )
+                )
+            }
+        }
+
+        /*if (transferManager.availableMdocAddresses?.size == 1) {
             findNavController().navigate(
                 DeviceEngagementFragmentDirections.actionScanDeviceEngagementToTransfer(
                     args.requestDocumentList
@@ -218,7 +232,7 @@ class DeviceEngagementFragment : Fragment() {
                     args.requestDocumentList
                 )
             )
-        }
+        }*/
     }
 
     override fun onDestroyView() {
