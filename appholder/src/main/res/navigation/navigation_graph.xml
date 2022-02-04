@@ -37,6 +37,9 @@
         <action
             android:id="@+id/action_selectDocumentFragment_to_settingsFragment"
             app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_selectDocumentFragment_to_modifyDetailsFragment"
+            app:destination="@id/modifyDetailsFragment" />
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
@@ -140,6 +143,15 @@
         tools:layout="@layout/fragment_transfer_document">
         <action
             android:id="@+id/action_transferDocumentFragment_to_selectDocumentFragment"
+            app:destination="@id/selectDocumentFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/modifyDetailsFragment"
+        android:name="com.android.mdl.app.fragment.ModifyDetailsFragment"
+        android:label="fragment_modify_details"
+        tools:layout="@layout/fragment_modify_details" >
+        <action
+            android:id="@+id/action_modifyDetailsFragment_to_selectDocumentFragment"
             app:destination="@id/selectDocumentFragment" />
     </fragment>
 </navigation>
