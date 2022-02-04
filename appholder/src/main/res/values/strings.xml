@@ -105,8 +105,8 @@
     <string name="bt_update_personal_details">Update mDL Personal Details</string>
     <string name="enter_first_name">Enter first name for document</string>
     <string name="enter_last_name">Enter last name</string>
-    <string name="title_update_details">Enter details to modify document information</string>
+    <string name="title_update_details">Enter details -</string>
     <string name="select_image">Select Image</string>
-    <string name="update_mdl_document">Update mDL document</string>
+    <string name="update_mdl_document">Modify</string>
     <string name="enter_dob">Enter date of birth(yyyy-MM-dd)</string>
 </resources>

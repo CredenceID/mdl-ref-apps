@@ -148,7 +148,7 @@
     <fragment
         android:id="@+id/modifyDetailsFragment"
         android:name="com.android.mdl.app.fragment.ModifyDetailsFragment"
-        android:label="fragment_modify_details"
+        android:label="Modify"
         tools:layout="@layout/fragment_modify_details" >
         <action
             android:id="@+id/action_modifyDetailsFragment_to_selectDocumentFragment"

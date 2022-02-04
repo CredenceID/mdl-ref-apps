@@ -90,4 +90,10 @@ class ModifyDetailsFragment : Fragment() {
         }
     }
 
+    fun onCancel() {
+        findNavController().navigate(
+            ModifyDetailsFragmentDirections.actionModifyDetailsFragmentToSelectDocumentFragment()
+        )
+    }
+
 }
