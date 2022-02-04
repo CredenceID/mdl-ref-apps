@@ -61,8 +61,10 @@ class ModifyDetailsFragment : Fragment() {
     fun onUpdateDocument() {
         val firstName = binding.etInputFirstName.text
         val lastName = binding.etInputLastName.text
+        val dob = binding.etInputDob.text
         input.name = firstName.toString()
         input.lastName = lastName.toString()
+        input.dob = dob.toString()
         binding.progressBar.isVisible = true
         val value = CoroutineScope(Dispatchers.IO).async {
             DocumentManager.getInstance(requireContext()).updateCreatedDocuments(input)
