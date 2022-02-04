@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.android.mdl.app.R
 import com.android.mdl.app.databinding.FragmentModifyDetailsBinding
 import com.android.mdl.app.document.DocumentManager
@@ -49,13 +50,22 @@ class ModifyDetailsFragment : Fragment() {
     fun onSelectPicture1() {
         binding.radio1.backgroundColor = Color.BLACK
         binding.radio2.backgroundColor = Color.WHITE
+        binding.radio3.backgroundColor = Color.WHITE
         input.licenceDB = R.drawable.img_licence_2
     }
 
     fun onSelectPicture2() {
         binding.radio1.backgroundColor = Color.WHITE
         binding.radio2.backgroundColor = Color.BLACK
+        binding.radio3.backgroundColor = Color.WHITE
         input.licenceDB = R.drawable.img_erika_portrait
+    }
+
+    fun onSelectPicture3() {
+        binding.radio1.backgroundColor = Color.WHITE
+        binding.radio2.backgroundColor = Color.WHITE
+        binding.radio3.backgroundColor = Color.BLACK
+        input.licenceDB = R.drawable.img_licence_3
     }
 
     fun onUpdateDocument() {
@@ -73,6 +83,10 @@ class ModifyDetailsFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             value.await()
             binding.progressBar.isVisible = false
+            findNavController().navigate(
+                ModifyDetailsFragmentDirections.actionModifyDetailsFragmentToSelectDocumentFragment()
+            )
+
         }
     }
 

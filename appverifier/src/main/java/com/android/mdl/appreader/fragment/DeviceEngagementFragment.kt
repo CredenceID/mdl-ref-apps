@@ -210,6 +210,7 @@ class DeviceEngagementFragment : Fragment() {
         if( availableAddressesSize > 0) {
             val availableMdocAddressList = transferManager.availableMdocAddresses?.toList()
             val mDocAddress = availableMdocAddressList?.get(0)
+            Log.d(LOG_TAG, "mdoc Address ${mDocAddress}")
             mDocAddress?.let {
                 transferManager.setMdocAddress(it)
                 findNavController().navigate(

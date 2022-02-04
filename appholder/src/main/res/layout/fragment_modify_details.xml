@@ -194,6 +194,30 @@
                         android:scaleType="centerInside"
                         android:src="@drawable/img_erika_portrait" />
                 </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/radio3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:onClick="@{() -> fragment.onSelectPicture3()}"
+                    android:orientation="vertical">
+
+
+                    <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/licenceImage3"
+                        android:layout_width="1dp"
+                        android:layout_height="1dp"
+                        android:layout_centerInParent="true"
+                        android:button="@null" />
+
+                    <ImageButton
+                        android:layout_width="80dp"
+                        android:layout_height="120dp"
+                        android:onClick="@{() -> fragment.onSelectPicture3()}"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_licence_3" />
+                </RelativeLayout>
                 <!--<androidx.appcompat.widget.AppCompatRadioButton
                     android:id="@+id/licenceImage3"
                     android:layout_width="80dp"
