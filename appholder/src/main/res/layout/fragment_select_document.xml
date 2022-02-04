@@ -69,7 +69,20 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/bt_add_document" />
+                app:layout_constraintTop_toBottomOf="@+id/bt_add_document"
+                app:layout_constraintVertical_bias="0.120000005" />
+
+            <Button
+                android:id="@+id/bt_update_dl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:onClick="@{() -> fragment.updateMDLData()}"
+                android:text="@string/bt_update_personal_details"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/bt_present_documents" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
