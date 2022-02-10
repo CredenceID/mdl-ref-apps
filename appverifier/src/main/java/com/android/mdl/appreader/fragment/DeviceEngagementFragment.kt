@@ -207,12 +207,21 @@ class DeviceEngagementFragment : Fragment() {
 
     private fun onDeviceEngagementReceived() {
         val availableAddressesSize = transferManager.availableMdocAddresses?.size ?: 0
-        if( availableAddressesSize > 0) {
+        if( availableAddressesSize >= 2) {
             val availableMdocAddressList = transferManager.availableMdocAddresses?.toList()
-            val mDocAddress = availableMdocAddressList?.get(0)
-            Log.d(LOG_TAG, "mdoc Address ${mDocAddress}")
+            val mDocAddress = availableMdocAddressList?.get(1)
+            Log.d(LOG_TAG, "mdoc Address $mDocAddress")
             mDocAddress?.let {
                 transferManager.setMdocAddress(it)
+                findNavController().navigate(
+                    DeviceEngagementFragmentDirections.actionScanDeviceEngagementToTransfer(
+                        args.requestDocumentList
+                    )
+                )
+            }
+        } else {
+            if (transferManager.availableMdocAddresses?.size == 1) {
+                val mDocAddress = transferManager.availableMdocAddresses?.toList()?.get(0)
                 findNavController().navigate(
                     DeviceEngagementFragmentDirections.actionScanDeviceEngagementToTransfer(
                         args.requestDocumentList
