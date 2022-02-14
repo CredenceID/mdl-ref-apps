@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.android.mdl.appreader.util.NetworkHelper
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -47,12 +49,12 @@ class CIDRepository {
         return mIDRequest
     }
 
-    fun submitDetailsToServer() {
+    fun submitDetailsToServer(log : NetworkHelper.MIDDetailsRequest) {
         val data = MutableLiveData<String>()
         val LOG_TAG = "CIDRepository"
         Log.d(LOG_TAG, "Calling API....")
         val mIDService = NetworkHelper.retrofit?.create(NetworkHelper.MIDService::class.java)
-        val responseCall = mIDService?.sendMIDDetails(createDetailsRequest())
+        val responseCall = mIDService?.sendMIDDetails(createDetailsRequest(log))
         responseCall?.enqueue(object : Callback<ResponseBody> {
             override fun onResponse(
                 call: Call<ResponseBody>,
@@ -71,17 +73,24 @@ class CIDRepository {
         })
     }
 
-    private fun createDetailsRequest() : NetworkHelper.MIDDetailsRequest {
-        val mIDRequest = NetworkHelper.MIDDetailsRequest()
-        mIDRequest.createdOn = System.currentTimeMillis().toString()
-        mIDRequest.imei = "356905071680409"
-        mIDRequest.firstName = "first name"
-        mIDRequest.lastName = "last name"
-        mIDRequest.midReaderStatus = "verified"
-        mIDRequest.docId = "1231222"
-        mIDRequest.dob = "2012-12-12"
-        mIDRequest.latitude = "18.4880822"
-        mIDRequest.longitude = "73.9518927"
-        return mIDRequest
+    private fun createDetailsRequest(log : NetworkHelper.MIDDetailsRequest) : MultipartBody {
+
+        val multipartBody = log.image?.asRequestBody()?.let {
+            MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("firstName", "first name")
+                .addFormDataPart("lastName", "Last Name name")
+                .addFormDataPart("createdOn", "2022-02-14 00:00:00.0")
+                .addFormDataPart("dob", "2012-12-12")
+                .addFormDataPart("email", "sample@sample.com")
+                .addFormDataPart("docId", "212313")
+                .addFormDataPart("latitude", "18.4880822")
+                .addFormDataPart("longitude", "73.9518927")
+                .addFormDataPart("midReaderStatus", "done")
+                .addFormDataPart("imei", "889")
+                .addFormDataPart("image", log.image?.toString(), it)
+                .build()
+        }
+        return multipartBody!!
     }
 }

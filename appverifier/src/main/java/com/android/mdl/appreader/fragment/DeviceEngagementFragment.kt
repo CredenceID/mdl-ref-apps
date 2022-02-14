@@ -12,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -20,6 +21,8 @@ import androidx.navigation.fragment.navArgs
 import com.android.mdl.appreader.R
 import com.android.mdl.appreader.databinding.FragmentDeviceEngagementBinding
 import com.android.mdl.appreader.transfer.TransferManager
+import com.android.mdl.appreader.util.DefaultExecutorSupplier
+import com.android.mdl.appreader.util.SystemUtils
 import com.android.mdl.appreader.util.TransferStatus
 import com.budiyev.android.codescanner.CodeScanner
 import com.budiyev.android.codescanner.DecodeCallback
@@ -40,7 +43,8 @@ class DeviceEngagementFragment : Fragment() {
     private val appPermissions:List<String> get() {
         var permissions = mutableListOf(
             Manifest.permission.CAMERA,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
 
         if (android.os.Build.VERSION.SDK_INT >= 31) {
@@ -76,6 +80,18 @@ class DeviceEngagementFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    requireActivity().finish()
+                }
+            })
+        DefaultExecutorSupplier.getInstance().forLightWeightBackgroundTasks().execute(
+            Runnable {
+                SystemUtils.excGreenLeft()
+            }
+        )
         // QR Code Engagement
         mCodeScanner = CodeScanner(requireContext(), binding.csScanner)
         mCodeScanner?.decodeCallback = DecodeCallback { result ->
