@@ -130,7 +130,8 @@ class DeviceEngagementFragment : Fragment() {
         })
 
         binding.btCancel.setOnClickListener {
-            findNavController().navigate(R.id.action_ScanDeviceEngagement_to_RequestOptions)
+            requireActivity().finish()
+            //findNavController().navigate(R.id.action_ScanDeviceEngagement_to_RequestOptions)
         }
     }
 
