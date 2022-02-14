@@ -17,7 +17,7 @@ import androidx.security.identity.DeviceResponseParser
 import com.android.mdl.appreader.R
 import com.android.mdl.appreader.databinding.FragmentShowDocumentBinding
 import com.android.mdl.appreader.issuerauth.SimpleIssuerTrustStore
-import com.android.mdl.appreader.logger.DocumentDetailsLogger
+import com.android.mdl.appreader.logger.DocumentLogger
 import com.android.mdl.appreader.transfer.TransferManager
 import com.android.mdl.appreader.util.FormatUtil
 import com.android.mdl.appreader.util.KeysAndCertificates
@@ -68,8 +68,8 @@ class ShowDocumentFragment : Fragment() {
         val documents = transferManager.getDeviceResponse().documents
         binding.tvResults.text =
             Html.fromHtml(formatTextResult(documents), Html.FROM_HTML_MODE_COMPACT)
-
-        portraitBytes?.let { pb ->
+        portraitBytes
+        ?.let { pb ->
             Log.d(LOG_TAG, "Showing portrait " + pb.size + " bytes")
             binding.ivPortrait.setImageBitmap(
                 BitmapFactory.decodeByteArray(portraitBytes, 0, pb.size)
@@ -89,6 +89,7 @@ class ShowDocumentFragment : Fragment() {
             hideButtons()
         }
         binding.btCloseTransportSpecific.setOnClickListener {
+            //calling close transport specific after document trf completes
             transferManager.stopVerification(
                 sendSessionTerminationMessage = true,
                 useTransportSpecificSessionTermination = true
@@ -243,8 +244,15 @@ class ShowDocumentFragment : Fragment() {
                 Log.e(LOG_TAG,"Error while receiving response from server : $it")
             }
         })
-
-        DocumentDetailsLogger.log(requireContext(), DocumentDetailsLogger.createDetailsRequest())
+        DocumentLogger.log(requireContext(), DocumentLogger.createDetailsRequest(), portraitBytes)
+        //-- closing transferP@
+        transferManager.stopVerification(
+            sendSessionTerminationMessage = true,
+            useTransportSpecificSessionTermination = true
+        )
+        hideButtons()
+        //calling OK click
+        findNavController().navigate(R.id.action_ShowDocument_to_RequestOptions)
     }
 
     override fun onDestroyView() {

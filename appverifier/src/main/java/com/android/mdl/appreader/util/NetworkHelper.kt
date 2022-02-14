@@ -2,6 +2,7 @@ package com.android.mdl.appreader.util
 
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
@@ -10,6 +11,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 object NetworkHelper {
@@ -46,7 +48,7 @@ object NetworkHelper {
         fun sendMIDActivity(@Body loginRequest: MIDRequest):Call<ResponseBody>
 
         @POST("/midDevice/saveMIDDetails")
-        fun sendMIDDetails(@Body loginRequest: MIDDetailsRequest):Call<ResponseBody>
+        fun sendMIDDetails(@Body body: MultipartBody):Call<ResponseBody>
     }
 
 
@@ -68,15 +70,20 @@ object NetworkHelper {
     )
 
     data class MIDDetailsRequest (
-        @SerializedName("firstName") var firstName : String    = "",
-        @SerializedName("lastName") var lastName: String  =  "",
-        @SerializedName("docId") var docId : String="",
-        @SerializedName("email") var email: String=  "",
-        @SerializedName("imei") var imei : String  =  "",
-        @SerializedName("latitude") var latitude : String  =  "",
-        @SerializedName("longitude"  ) var longitude: String  =  "",
-        @SerializedName("midReaderStatus"  ) var midReaderStatus: String  =  "",
-        @SerializedName("createdOn" ) var createdOn : String  =  "",
-        @SerializedName("dob") var dob: String  =  "",
-    )
+        var firstName : String    = "",
+        var lastName: String  =  "",
+        var docId : String="",
+        var email: String=  "",
+        var imei : String  =  "",
+        var latitude : String  =  "",
+        var longitude: String  =  "",
+        var midReaderStatus: String  =  "",
+        var createdOn : String  =  "",
+        var dob: String  =  "",
+        var image: File? = null,
+    ) {
+        fun addImage(file: File) {
+            image = file
+        }
+    }
 }

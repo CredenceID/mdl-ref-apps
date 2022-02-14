@@ -98,11 +98,20 @@ class RequestOptionsFragment : Fragment() {
         // TODO: get intent to retain from user
         val intentToRetain = false
         val requestDocumentList = RequestDocumentList()
+        val mdl = RequestMdl
+        mdl.setSelectedDataItems(getSelectRequestMdlMandatory(intentToRetain))
+        requestDocumentList.addRequestDocument(mdl)
 
-        binding.btNext.setOnClickListener {
+        findNavController().navigate(
+            RequestOptionsFragmentDirections.actionRequestOptionsToScanDeviceEngagement(
+                requestDocumentList
+            )
+        )
+
+        /*binding.btNext.setOnClickListener {
 
             if (binding.cbRequestMdl.isChecked) {
-                val mdl = RequestMdl
+
                 when {
                     binding.cbRequestMdlOlder18.isChecked ->
                         mdl.setSelectedDataItems(getSelectRequestMdlOlder18(intentToRetain))
@@ -155,14 +164,10 @@ class RequestOptionsFragment : Fragment() {
                         )
                     )
                 } else {
-                    findNavController().navigate(
-                        RequestOptionsFragmentDirections.actionRequestOptionsToScanDeviceEngagement(
-                            requestDocumentList
-                        )
-                    )
+
                 }
             }
-        }
+        }*/
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

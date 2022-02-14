@@ -46,10 +46,10 @@ public class MIDDetails {
         mJSON = JSON;
     }
 
-    @Override
+    /*@Override
     public String toString() {
         return String.format(Locale.ENGLISH,
                 "ID: %d\nLogType: %s, JSON: %s",
                 mID, mJSON);
-    }
+    }*/
 }
