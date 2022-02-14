@@ -44,23 +44,39 @@ object NetworkHelper {
     interface MIDService {
         @POST("/recentactivity/saveActivityLogs")
         fun sendMIDActivity(@Body loginRequest: MIDRequest):Call<ResponseBody>
+
+        @POST("/midDevice/saveMIDDetails")
+        fun sendMIDDetails(@Body loginRequest: MIDDetailsRequest):Call<ResponseBody>
     }
 
 
     data class MIDRequest (
-        @SerializedName("createDttm"         ) var createDttm         : Int    = 0,
-        @SerializedName("ethernetMacAddr"    ) var ethernetMacAddr    : String  =  "",
-        @SerializedName("imei"               ) var imei               : String  =  "",
-        @SerializedName("apiId"              ) var apiId              : String  =  "",
-        @SerializedName("latitude"           ) var latitude           : String  =  "",
-        @SerializedName("longitude"          ) var longitude          : String  =  "",
-        @SerializedName("androidID"          ) var androidID          : String  =  "",
-        @SerializedName("macAddress"         ) var macAddress         : String  =  "",
-        @SerializedName("buildNumber"        ) var buildNumber        : String  =  "",
-        @SerializedName("androidVersion"     ) var androidVersion     : String  =  "",
-        @SerializedName("bitmapImage"        ) var bitmapImage        : String  =  "",
+        @SerializedName("createDttm" ) var createDttm : Int    = 0,
+        @SerializedName("ethernetMacAddr" ) var ethernetMacAddr: String  =  "",
+        @SerializedName("imei" ) var imei : String  =  "",
+        @SerializedName("apiId") var apiId: String  =  "",
+        @SerializedName("latitude") var latitude : String  =  "",
+        @SerializedName("longitude"  ) var longitude: String  =  "",
+        @SerializedName("androidID"  ) var androidID: String  =  "",
+        @SerializedName("macAddress" ) var macAddress : String  =  "",
+        @SerializedName("buildNumber") var buildNumber: String  =  "",
+        @SerializedName("androidVersion") var androidVersion : String  =  "",
+        @SerializedName("bitmapImage") var bitmapImage: String  =  "",
         @SerializedName("faceLandmarkPoints" ) var faceLandmarkPoints : String  =  "",
-        @SerializedName("faceTemplate"       ) var faceTemplate       : String  =  ""
+        @SerializedName("faceTemplate"  ) var faceTemplate : String  =  ""
 
+    )
+
+    data class MIDDetailsRequest (
+        @SerializedName("firstName") var firstName : String    = "",
+        @SerializedName("lastName") var lastName: String  =  "",
+        @SerializedName("docId") var docId : String="",
+        @SerializedName("email") var email: String=  "",
+        @SerializedName("imei") var imei : String  =  "",
+        @SerializedName("latitude") var latitude : String  =  "",
+        @SerializedName("longitude"  ) var longitude: String  =  "",
+        @SerializedName("midReaderStatus"  ) var midReaderStatus: String  =  "",
+        @SerializedName("createdOn" ) var createdOn : String  =  "",
+        @SerializedName("dob") var dob: String  =  "",
     )
 }

@@ -17,6 +17,7 @@ import androidx.security.identity.DeviceResponseParser
 import com.android.mdl.appreader.R
 import com.android.mdl.appreader.databinding.FragmentShowDocumentBinding
 import com.android.mdl.appreader.issuerauth.SimpleIssuerTrustStore
+import com.android.mdl.appreader.logger.DocumentDetailsLogger
 import com.android.mdl.appreader.transfer.TransferManager
 import com.android.mdl.appreader.util.FormatUtil
 import com.android.mdl.appreader.util.KeysAndCertificates
@@ -242,6 +243,8 @@ class ShowDocumentFragment : Fragment() {
                 Log.e(LOG_TAG,"Error while receiving response from server : $it")
             }
         })
+
+        DocumentDetailsLogger.log(requireContext(), DocumentDetailsLogger.createDetailsRequest())
     }
 
     override fun onDestroyView() {

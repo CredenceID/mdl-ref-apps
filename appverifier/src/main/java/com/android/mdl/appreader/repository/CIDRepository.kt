@@ -46,4 +46,42 @@ class CIDRepository {
         mIDRequest.androidID = "ce08171833b84f3705"
         return mIDRequest
     }
+
+    fun submitDetailsToServer() {
+        val data = MutableLiveData<String>()
+        val LOG_TAG = "CIDRepository"
+        Log.d(LOG_TAG, "Calling API....")
+        val mIDService = NetworkHelper.retrofit?.create(NetworkHelper.MIDService::class.java)
+        val responseCall = mIDService?.sendMIDDetails(createDetailsRequest())
+        responseCall?.enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(
+                call: Call<ResponseBody>,
+                response: Response<ResponseBody>
+            ) {
+                if (response.body() != null) {
+                    data.postValue("SUCCESS")
+                } else {
+                    data.postValue("FAIL ${response.code()}")
+                }
+            }
+
+            override fun onFailure(call: Call<ResponseBody?>?, t: Throwable?) {
+                data.postValue("FAIL ${t?.cause}")
+            }
+        })
+    }
+
+    private fun createDetailsRequest() : NetworkHelper.MIDDetailsRequest {
+        val mIDRequest = NetworkHelper.MIDDetailsRequest()
+        mIDRequest.createdOn = System.currentTimeMillis().toString()
+        mIDRequest.imei = "356905071680409"
+        mIDRequest.firstName = "first name"
+        mIDRequest.lastName = "last name"
+        mIDRequest.midReaderStatus = "verified"
+        mIDRequest.docId = "1231222"
+        mIDRequest.dob = "2012-12-12"
+        mIDRequest.latitude = "18.4880822"
+        mIDRequest.longitude = "73.9518927"
+        return mIDRequest
+    }
 }
