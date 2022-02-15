@@ -9,6 +9,8 @@ import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.jetbrains.anko.custom.async
+import org.jetbrains.anko.doAsync
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -17,7 +19,7 @@ import java.nio.charset.Charset
 object DocumentLogger {
 
     private const val DELAY_MS = 500
-    private var mDataBase: CachedDocumentDetailsDataBase? = null
+    private var mDataBase: CachedDocumentDetailsDB? = null
 
     /* If there is internet connectivity will send log to CredenceConnect, otherwise saves log to
      * local database.
@@ -58,7 +60,7 @@ object DocumentLogger {
 
             /* Obtain database Instance if none. */
             if (null == mDataBase)
-                mDataBase = CachedDocumentDetailsDataBase.getInstance(context)
+                mDataBase = CachedDocumentDetailsDB.getInstance(context)
 
             /* Convert log to type database understands. This means extracting all fields and converting
          * them to a JSON string. If object was of an invalid type, null be returned.
@@ -67,12 +69,12 @@ object DocumentLogger {
 
             /* Save to database if no internet. */
             if (!hasInternet(context)) {
-            Log.d("C-service", "network not available")
-            mDataBase?.insert(midDetails)
-        } else {
-            Log.d("C-service", "network available")
-            /* Send log immediately if there is internet. */
-            sendLog(context, log)
+                Log.d("C-service", "network not available")
+                mDataBase?.insert(midDetails)
+            } else {
+                Log.d("C-service", "network available")
+                /* Send log immediately if there is internet. */
+                sendLog(context, log)
 
 //            new Thread(() -> {
 //                if(DEBUG)Log.d("C-service","inside new thread");
@@ -81,21 +83,24 @@ object DocumentLogger {
 //                /*if (AnalyticsLogger.sendLog(logObject))
 //                    mDataBase.delete(logObject.getID());*/
 //            }).start();
-        }
+            }
         }
     }
 
     fun sendCachedLogs(context: Context?) {
         /* Obtain database Instance if none. */
         if (null == mDataBase)
-            mDataBase = CachedDocumentDetailsDataBase.getInstance(context)
+            mDataBase = CachedDocumentDetailsDB.getInstance(context)
         /* If internet send over all logs from database. */
         if (hasInternet(context!!))
-            mDataBase?.getLogs { logs: List<MIDDetails> ->
-            sendLogs(context,
-                logs
-            )
-        }
+            mDataBase?.getLogs(object : CachedDocumentDetailsDB.OnGet {
+                override fun onGet(logs: List<MIDDetails>) {
+                    sendLogs(
+                        context,
+                        logs
+                    )
+                }
+            })
     }
 
     private fun toLogObject(detailsRequest: MIDDetailsRequest): MIDDetails {
@@ -126,26 +131,28 @@ object DocumentLogger {
     /* Sends over a given set of logs to CredenceConnect server in separate Thread. */
     private fun sendLogs(context: Context, logs: List<MIDDetails>) {
         CoroutineScope(Dispatchers.IO).launch {
-                for (log in logs) {
-                    /* If log was successfully sent over, delete it from database. */
-                    val request = Gson().fromJson(
-                        log.json,
-                        MIDDetailsRequest::class.java
-                    )
-                    if (sendLog(context,request))
-                        mDataBase?.delete(log.id)
-                    /* Small delay before sending over next log. */
-                    delay(
-                        DELAY_MS.toLong()
-                    )
-                }
+            for (log in logs) {
+                /* If log was successfully sent over, delete it from database. */
+                val request = Gson().fromJson(
+                    log.json,
+                    MIDDetailsRequest::class.java
+                )
+                val isSend = sendLog(context, request)
+                if (isSend)
+                    mDataBase?.delete(log.id)
+                /* Small delay before sending over next log. */
+                delay(
+                    DELAY_MS.toLong()
+                )
+            }
         }
     }
+
     val mutex = Mutex()
     private suspend fun sendLog(context: Context, log: MIDDetailsRequest?): Boolean {
         if (null == log) return false
         mutex.withLock {
-            var file : File
+            var file: File
             val bytes = log.imageData?.toByteArray(Charset.defaultCharset())
             if (bytes != null) {
                 try {
