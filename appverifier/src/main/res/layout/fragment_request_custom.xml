@@ -7,7 +7,7 @@
         android:id="@+id/select_document"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".fragment.RequestCustomFragment">
+        tools:context="com.credenceid.midverifier.fragment.RequestCustomFragment">
 
         <TextView
             android:id="@+id/message"
