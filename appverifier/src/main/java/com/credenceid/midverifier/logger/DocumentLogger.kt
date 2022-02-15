@@ -187,7 +187,6 @@ object DocumentLogger {
         image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
         val b = baos.toByteArray()
         val imageEncoded: String = Base64.encodeToString(b, Base64.DEFAULT)
-        Log.e("LOOK", imageEncoded)
         return imageEncoded
     }
 

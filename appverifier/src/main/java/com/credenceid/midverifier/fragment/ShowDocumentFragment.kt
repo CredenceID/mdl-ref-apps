@@ -244,8 +244,9 @@ class ShowDocumentFragment : Fragment() {
                 Log.e(LOG_TAG,"Error while receiving response from server : $it")
             }
         })
-        DocumentLogger.log(requireContext(),
-            portraitBytes?.let { DocumentLogger.createDetailsRequest(it) })
+
+        viewModel.sendMIDDetails(requireContext(), portraitBytes)
+
         //-- closing transferP@
         transferManager.stopVerification(
             sendSessionTerminationMessage = true,
