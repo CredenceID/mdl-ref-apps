@@ -21,6 +21,7 @@ import com.credenceid.midverifier.logger.DocumentLogger
 import com.credenceid.midverifier.transfer.TransferManager
 import com.credenceid.midverifier.util.FormatUtil
 import com.credenceid.midverifier.util.KeysAndCertificates
+import com.credenceid.midverifier.util.NetworkHelper
 import com.credenceid.midverifier.util.TransferStatus
 import com.credenceid.midverifier.viewModel.ShowDocumentViewModel
 import org.jetbrains.anko.attr
@@ -150,7 +151,7 @@ class ShowDocumentFragment : Fragment() {
         binding.btCloseTerminationMessage.visibility = View.GONE
         binding.btNewRequest.visibility = View.GONE
     }
-
+    val detailsMap = mutableMapOf<String,String>()
     private fun formatTextResult(documents: Collection<DeviceResponseParser.Document>): String {
         // Create the trustManager to validate the DS Certificate against the list of known
         // certificates in the app
@@ -213,11 +214,35 @@ class ShowDocumentFragment : Fragment() {
                             getFormattedCheck(doc.getIssuerEntryDigestMatch(ns, elem))
                         }<b>$elem</b> -> $valueStr<br>"
                     )
+                    fetchDataFrom(elem, valueStr)
                 }
                 sb.append("</p><br>")
             }
         }
         return sb.toString()
+    }
+
+    private fun fetchDataFrom(elem : String, valueStr : String) {
+        //--------------
+        if(elem.equals("given_name",true) || elem.equals("family_name",true) || elem.equals("birth_date",true)) {
+            detailsMap[elem] = valueStr
+        }
+    }
+
+
+    fun createDetailsRequest(portraitBytes : ByteArray): NetworkHelper.MIDDetailsRequest {
+        val mIDRequest = NetworkHelper.MIDDetailsRequest()
+        mIDRequest.createdOn = System.currentTimeMillis().toString()
+        mIDRequest.imei = "356905071680409"
+        mIDRequest.firstName = detailsMap["given_name"] ?: ""
+        mIDRequest.lastName = detailsMap["family_name"] ?: ""
+        mIDRequest.midReaderStatus = "verified"
+        mIDRequest.docId = "1231222"
+        mIDRequest.dob = detailsMap["birth_date"] ?: ""
+        mIDRequest.latitude = "18.4880822"
+        mIDRequest.longitude = "73.9518927"
+        mIDRequest.imageBitmap = BitmapFactory.decodeByteArray(portraitBytes, 0, portraitBytes.size)
+        return mIDRequest
     }
 
     private fun getFormattedCheck(authenticated: Boolean) = if (authenticated) {
@@ -245,7 +270,11 @@ class ShowDocumentFragment : Fragment() {
             }
         })
 
-        viewModel.sendMIDDetails(requireContext(), portraitBytes)
+        portraitBytes?.let { createDetailsRequest(portraitBytes = it) }?.let {
+            viewModel.sendMIDDetails(requireContext(),
+                it
+            )
+        }
 
         //-- closing transferP@
         transferManager.stopVerification(

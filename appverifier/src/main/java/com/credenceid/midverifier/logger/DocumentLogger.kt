@@ -107,21 +107,6 @@ object DocumentLogger {
         return midDetails
     }
 
-    fun createDetailsRequest(portraitBytes : ByteArray): MIDDetailsRequest {
-        val mIDRequest = MIDDetailsRequest()
-        mIDRequest.createdOn = System.currentTimeMillis().toString()
-        mIDRequest.imei = "356905071680409"
-        mIDRequest.firstName = "first name"
-        mIDRequest.lastName = "last name"
-        mIDRequest.midReaderStatus = "verified"
-        mIDRequest.docId = "1231222"
-        mIDRequest.dob = "2012-12-12"
-        mIDRequest.latitude = "18.4880822"
-        mIDRequest.longitude = "73.9518927"
-        mIDRequest.imageBitmap = BitmapFactory.decodeByteArray(portraitBytes, 0, portraitBytes.size)
-        return mIDRequest
-    }
-
     /* Sends over a given set of logs to CredenceConnect server in separate Thread. */
     private fun sendLogs(context: Context, logs: List<MIDDetails>) {
         CoroutineScope(Dispatchers.IO).launch {
