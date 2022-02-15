@@ -1,5 +1,6 @@
 package com.credenceid.midverifier.util
 
+import android.graphics.Bitmap
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
@@ -81,7 +82,8 @@ object NetworkHelper {
         var createdOn : String  =  "",
         var dob: String  =  "",
         var image: File? = null,
-        var imageData : String = ""
+        var imageData : String = "",
+        var imageBitmap : Bitmap? = null
     ) {
         fun addImage(file: File) {
             image = file
@@ -89,6 +91,10 @@ object NetworkHelper {
 
         fun addByteList(byteList: String) {
             imageData = byteList
+        }
+
+        fun addImageBitmap (bitmap : Bitmap) {
+            imageBitmap = bitmap
         }
     }
 }
