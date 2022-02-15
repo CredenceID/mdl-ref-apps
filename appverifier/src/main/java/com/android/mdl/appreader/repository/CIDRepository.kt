@@ -10,6 +10,7 @@ import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.coroutines.suspendCoroutine
 
 class CIDRepository {
 
@@ -49,7 +50,7 @@ class CIDRepository {
         return mIDRequest
     }
 
-    fun submitDetailsToServer(log : NetworkHelper.MIDDetailsRequest) {
+    suspend fun submitDetailsToServer(log : NetworkHelper.MIDDetailsRequest) = suspendCoroutine<Boolean> {
         val data = MutableLiveData<String>()
         val LOG_TAG = "CIDRepository"
         Log.d(LOG_TAG, "Calling API....")
@@ -61,14 +62,14 @@ class CIDRepository {
                 response: Response<ResponseBody>
             ) {
                 if (response.body() != null) {
-                    data.postValue("SUCCESS")
+                    it.resumeWith(result = Result.success(true))
                 } else {
-                    data.postValue("FAIL ${response.code()}")
+                    it.resumeWith(result = Result.success(false))
                 }
             }
 
             override fun onFailure(call: Call<ResponseBody?>?, t: Throwable?) {
-                data.postValue("FAIL ${t?.cause}")
+                it.resumeWith(result = Result.success(false))
             }
         })
     }

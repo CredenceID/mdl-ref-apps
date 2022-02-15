@@ -6,15 +6,13 @@ import com.android.mdl.appreader.repository.CIDRepository
 import com.android.mdl.appreader.util.NetworkHelper.MIDDetailsRequest
 import com.android.mdl.appreader.util.NetworkUtils.hasInternet
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.nio.charset.Charset
 
 object DocumentLogger {
 
@@ -42,7 +40,7 @@ object DocumentLogger {
                     "Failed to write last reported activity to file :" + e.message
                 )
             }
-            var file: File? = null
+            /*var file: File? = null
             if (portraitBytes != null) {
                 try {
                     file = File(context.filesDir.toString() + "/file.png")
@@ -52,10 +50,11 @@ object DocumentLogger {
                     fos.flush()
                     fos.close()
                     log.addImage(file)
+                    log.addByteList(portraitBytes.toString(Charset.defaultCharset()))
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
-            }
+            }*/
 
             /* Obtain database Instance if none. */
             if (null == mDataBase)
@@ -66,12 +65,14 @@ object DocumentLogger {
          */
             val midDetails = toLogObject(log) ?: return@launch
 
-            /* Save to database if no internet. */if (!hasInternet(context)) {
+            /* Save to database if no internet. */
+            if (!hasInternet(context)) {
             Log.d("C-service", "network not available")
             mDataBase?.insert(midDetails)
         } else {
             Log.d("C-service", "network available")
-            /* Send log immediately if there is internet. */sendLog(log)
+            /* Send log immediately if there is internet. */
+            sendLog(context, log)
 
 //            new Thread(() -> {
 //                if(DEBUG)Log.d("C-service","inside new thread");
@@ -89,8 +90,9 @@ object DocumentLogger {
         if (null == mDataBase)
             mDataBase = CachedDocumentDetailsDataBase.getInstance(context)
         /* If internet send over all logs from database. */
-        if (hasInternet(context!!)) mDataBase?.getLogs { logs: List<MIDDetails> ->
-            sendLogs(
+        if (hasInternet(context!!))
+            mDataBase?.getLogs { logs: List<MIDDetails> ->
+            sendLogs(context,
                 logs
             )
         }
@@ -122,7 +124,7 @@ object DocumentLogger {
     }
 
     /* Sends over a given set of logs to CredenceConnect server in separate Thread. */
-    private fun sendLogs(logs: List<MIDDetails>) {
+    private fun sendLogs(context: Context, logs: List<MIDDetails>) {
         CoroutineScope(Dispatchers.IO).launch {
                 for (log in logs) {
                     /* If log was successfully sent over, delete it from database. */
@@ -130,10 +132,8 @@ object DocumentLogger {
                         log.json,
                         MIDDetailsRequest::class.java
                     )
-                    if (sendLog(request)) mDataBase?.delete(
-                        log.id
-                    )
-
+                    if (sendLog(context,request))
+                        mDataBase?.delete(log.id)
                     /* Small delay before sending over next log. */
                     delay(
                         DELAY_MS.toLong()
@@ -142,11 +142,26 @@ object DocumentLogger {
         }
     }
     val mutex = Mutex()
-    private suspend fun sendLog(log: MIDDetailsRequest?): Boolean {
+    private suspend fun sendLog(context: Context, log: MIDDetailsRequest?): Boolean {
         if (null == log) return false
         mutex.withLock {
+            var file : File
+            val bytes = log.imageData?.toByteArray(Charset.defaultCharset())
+            if (bytes != null) {
+                try {
+                    file = File(context.filesDir.toString() + "/file.png")
+                    val fos = FileOutputStream(file)
+                    //write your byteArray here
+                    fos.write(bytes)
+                    fos.flush()
+                    fos.close()
+                    log.addImage(file)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
             try {
-                CIDRepository().submitDetailsToServer(log)
+                return CIDRepository().submitDetailsToServer(log)
             } catch (e: java.lang.Exception) {
                 Log.w("TAG", "Unable to send analytic(s) to server." + e.message)
             }

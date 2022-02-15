@@ -10,6 +10,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
+import com.android.mdl.appreader.logger.DocumentLogger
 import com.android.mdl.appreader.util.NetworkHelper
 
 class MainActivity : AppCompatActivity() {
@@ -46,6 +47,9 @@ class MainActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         mPendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        //-- to capture all pending documents and send them to server
+        DocumentLogger.sendCachedLogs(this)
     }
 
     override fun onResume() {
