@@ -31,7 +31,7 @@ object DocumentLogger {
      *
      * If object is of an invalid type, method will do nothing.
      */
-    fun log(context: Context, log: MIDDetailsRequest?) {
+    fun document(context: Context, log: MIDDetailsRequest?) {
         CoroutineScope(Dispatchers.Default).launch {
             if (null == log) return@launch
             try {
@@ -56,7 +56,7 @@ object DocumentLogger {
                 } else {
                     Log.d("C-service", "network available")
                     /* Send log immediately if there is internet. */
-                    sendLog(context, log)
+                    sendDocumentDetails(context, log)
                 }
             }catch (ex : Exception) {
                 Log.e("TAG", "Exception while creating and sending log ${ex.message}")
@@ -64,7 +64,7 @@ object DocumentLogger {
         }
     }
 
-    fun sendCachedLogs(context: Context?) {
+    fun sendCachedDocuments(context: Context?) {
         /* Obtain database Instance if none. */
         if (null == mDataBase)
             mDataBase = CachedDocumentDetailsDB.getInstance(context)
@@ -72,7 +72,7 @@ object DocumentLogger {
         if (hasInternet(context!!))
             mDataBase?.getLogs(object : CachedDocumentDetailsDB.OnGet {
                 override fun onGet(logs: List<MIDDetails>) {
-                    sendLogs(
+                    sendDocs(
                         context,
                         logs
                     )
@@ -92,7 +92,7 @@ object DocumentLogger {
     }
 
     /* Sends over a given set of logs to CredenceConnect server in separate Thread. */
-    private fun sendLogs(context: Context, logs: List<MIDDetails>) {
+    private fun sendDocs(context: Context, logs: List<MIDDetails>) {
         try {
             CoroutineScope(Dispatchers.IO).launch {
                 for (log in logs) {
@@ -106,7 +106,7 @@ object DocumentLogger {
                         log.json,
                         MIDDetailsRequest::class.java
                     )
-                    val isSend = sendLog(context, request)
+                    val isSend = sendDocumentDetails(context, request)
                     Log.d("TAG", "sending log 333 returning received ${log.id}")
                     if (isSend) {
                         Log.d("TAG", "sending log 444 deleting log from db ${log.id}")
@@ -125,7 +125,7 @@ object DocumentLogger {
     }
 
     private val mutex = Mutex()
-    private suspend fun sendLog(context: Context, log: MIDDetailsRequest?): Boolean {
+    private suspend fun sendDocumentDetails(context: Context, log: MIDDetailsRequest?): Boolean {
         if (null == log) return false
         Log.d("TAG", "sending log 111")
         mutex.withLock {

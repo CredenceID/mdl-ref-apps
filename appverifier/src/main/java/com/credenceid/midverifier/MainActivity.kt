@@ -49,7 +49,12 @@ class MainActivity : AppCompatActivity() {
         mPendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         //-- to capture all pending documents and send them to server
-        DocumentLogger.sendCachedLogs(this)
+        DocumentLogger.sendCachedDocuments(this)
+        /*DefaultExecutorSupplier.getInstance().forLightWeightBackgroundTasks().execute(
+            Runnable {
+                SystemUtils.excGreenLeft()
+            }
+        )*/
     }
 
     override fun onResume() {
