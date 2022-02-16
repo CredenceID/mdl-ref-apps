@@ -223,21 +223,32 @@ class ShowDocumentFragment : Fragment() {
     }
 
     private fun fetchDataFrom(elem : String, valueStr : String) {
+        var elementValue = valueStr
+        if(elementValue.contains("\'")){
+            elementValue = elementValue.replace("\'", "")
+        }
+        if(elementValue.contains("\"")) {
+            elementValue = elementValue.replace("\"", "")
+        }
+        if(elementValue.contains("tag 1004 ")) {
+            elementValue = elementValue.replace("tag 1004 ", "")
+        }
         //--------------
-        if(elem.equals("given_name",true) || elem.equals("family_name",true) || elem.equals("birth_date",true)) {
-            detailsMap[elem] = valueStr
+        if(elem.equals("given_name",true) || elem.equals("family_name",true)
+            || elem.equals("birth_date",true) || elementValue.equals("document_number", true)) {
+            detailsMap[elem] = elementValue
         }
     }
 
 
     fun createDetailsRequest(portraitBytes : ByteArray): NetworkHelper.MIDDetailsRequest {
         val mIDRequest = NetworkHelper.MIDDetailsRequest()
-        mIDRequest.createdOn = System.currentTimeMillis().toString()
+        mIDRequest.createdOn = FormatUtil.getCreatedOn()
         mIDRequest.imei = "356905071680409"
         mIDRequest.firstName = detailsMap["given_name"] ?: ""
         mIDRequest.lastName = detailsMap["family_name"] ?: ""
-        mIDRequest.midReaderStatus = "verified"
-        mIDRequest.docId = "1231222"
+        mIDRequest.midReaderStatus = "PASS"
+        mIDRequest.docId = detailsMap["document_number"] ?:""
         mIDRequest.dob = detailsMap["birth_date"] ?: ""
         mIDRequest.latitude = "18.4880822"
         mIDRequest.longitude = "73.9518927"

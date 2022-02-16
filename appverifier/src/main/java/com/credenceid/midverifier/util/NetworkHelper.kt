@@ -82,7 +82,7 @@ object NetworkHelper {
         var createdOn : String  =  "",
         var dob: String  =  "",
         var image: File? = null,
-        var imageData : String = "",
+        var imageData : String? = "",
         var imageBitmap : Bitmap? = null
     ) {
         fun addImage(file: File) {

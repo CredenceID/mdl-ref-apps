@@ -16,8 +16,9 @@ import java.security.interfaces.ECPublicKey
 import java.security.spec.ECPoint
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.text.ParseException
+import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.min
 
 
@@ -293,5 +294,20 @@ object FormatUtil {
             }
         }
         return true
+    }
+
+    fun getCreatedOn(): String {
+        val dateFormat = SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss.S", Locale.getDefault()
+        )
+        dateFormat.timeZone = TimeZone.getTimeZone("UTC");
+        val date = Date(System.currentTimeMillis())
+        val strDate = dateFormat.format(date)
+        Log.d("TAG", strDate)
+        return try {
+            strDate
+        } catch (e: ParseException) {
+            ""
+        }
     }
 }

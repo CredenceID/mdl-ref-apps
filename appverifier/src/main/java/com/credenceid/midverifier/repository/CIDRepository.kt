@@ -55,7 +55,7 @@ class CIDRepository {
         val LOG_TAG = "CIDRepository"
         Log.d(LOG_TAG, "Calling API....")
         val mIDService = NetworkHelper.retrofit?.create(NetworkHelper.MIDService::class.java)
-        val responseCall = mIDService?.sendMIDDetails(createDetailsRequest(log))
+        val responseCall = mIDService?.sendMIDDetails(createMultiPartRequest(log))
         responseCall?.enqueue(object : Callback<ResponseBody> {
             override fun onResponse(
                 call: Call<ResponseBody>,
@@ -74,21 +74,21 @@ class CIDRepository {
         })
     }
 
-    private fun createDetailsRequest(log : NetworkHelper.MIDDetailsRequest) : MultipartBody {
+    private fun createMultiPartRequest(log : NetworkHelper.MIDDetailsRequest) : MultipartBody {
 
         val multipartBody = log.image?.asRequestBody()?.let {
             MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("firstName", "first name")
-                .addFormDataPart("lastName", "Last Name name")
-                .addFormDataPart("createdOn", "2022-02-14 00:00:00.0")
-                .addFormDataPart("dob", "2012-12-12")
+                .addFormDataPart("firstName", log.firstName)
+                .addFormDataPart("lastName", log.lastName)
+                .addFormDataPart("createdOn", log.createdOn)
+                .addFormDataPart("dob", log.dob)
                 .addFormDataPart("email", "sample@sample.com")
-                .addFormDataPart("docId", "212313")
-                .addFormDataPart("latitude", "18.4880822")
+                .addFormDataPart("docId", log.docId)
+                .addFormDataPart("lattitude", "18.4880822")
                 .addFormDataPart("longitude", "73.9518927")
-                .addFormDataPart("midReaderStatus", "done")
-                .addFormDataPart("imei", "889")
+                .addFormDataPart("midReaderStatus", log.midReaderStatus)
+                .addFormDataPart("imei", log.imei)
                 .addFormDataPart("image", log.image?.toString(), it)
                 .build()
         }

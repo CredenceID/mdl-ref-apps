@@ -35,47 +35,31 @@ object DocumentLogger {
         CoroutineScope(Dispatchers.Default).launch {
             if (null == log) return@launch
             try {
-                //TODO: write a file
-//                JSONObject jsonParam = new JSONObject();
-//                jsonParam.put("lastReportedActivity", GenericUtils.getDeviceEpochTime());
-//                FileUtils.writeLastActivityTimeToFile(App.Context, jsonParam.toString());
-            } catch (e: Exception) {
-                Log.d(
-                    "App.TAG",
-                    "Failed to write last reported activity to file :" + e.message
-                )
-            }
+                val bitmapStringData = log.imageBitmap?.let { encodeToBase64(it) }
+                if (bitmapStringData != null) {
+                    log.imageData = bitmapStringData
+                }
 
-            val bitmapStringData = log.imageBitmap?.let { encodeToBase64(it) }
-            if (bitmapStringData != null) {
-                log.imageData = bitmapStringData
-            }
+                /* Obtain database Instance if none. */
+                if (null == mDataBase)
+                    mDataBase = CachedDocumentDetailsDB.getInstance(context)
 
-            /* Obtain database Instance if none. */
-            if (null == mDataBase)
-                mDataBase = CachedDocumentDetailsDB.getInstance(context)
+                /* Convert log to type database understands. This means extracting all fields and converting
+                 * them to a JSON string. If object was of an invalid type, null be returned.
+                */
+                val midDetails = toLogObject(log) ?: return@launch
 
-            /* Convert log to type database understands. This means extracting all fields and converting
-         * them to a JSON string. If object was of an invalid type, null be returned.
-         */
-            val midDetails = toLogObject(log) ?: return@launch
-
-            /* Save to database if no internet. */
-            if (!hasInternet(context)) {
-                Log.d("C-service", "network not available")
-                mDataBase?.insert(midDetails)
-            } else {
-                Log.d("C-service", "network available")
-                /* Send log immediately if there is internet. */
-                sendLog(context, log)
-
-//            new Thread(() -> {
-//                if(DEBUG)Log.d("C-service","inside new thread");
-//                /* If log was successfully sent over, delete it from database. */
-//                AnalyticsLogger.sendLog(logObject);
-//                /*if (AnalyticsLogger.sendLog(logObject))
-//                    mDataBase.delete(logObject.getID());*/
-//            }).start();
+                /* Save to database if no internet. */
+                if (!hasInternet(context)) {
+                    Log.d("C-service", "network not available")
+                    mDataBase?.insert(midDetails)
+                } else {
+                    Log.d("C-service", "network available")
+                    /* Send log immediately if there is internet. */
+                    sendLog(context, log)
+                }
+            }catch (ex : Exception) {
+                Log.e("TAG", "Exception while creating and sending log ${ex.message}")
             }
         }
     }
@@ -109,27 +93,34 @@ object DocumentLogger {
 
     /* Sends over a given set of logs to CredenceConnect server in separate Thread. */
     private fun sendLogs(context: Context, logs: List<MIDDetails>) {
-        CoroutineScope(Dispatchers.IO).launch {
-            for (log in logs) {
-                Log.d("TAG","-------------------------START-----------------------------------")
-                Log.d("TAG", "sending log *** getting new log ${log.id}")
-                /* If log was successfully sent over, delete it from database. */
-                val request = Gson().fromJson(
-                    log.json,
-                    MIDDetailsRequest::class.java
-                )
-                val isSend = sendLog(context, request)
-                Log.d("TAG", "sending log 333 returning received ${log.id}")
-                if (isSend) {
-                    Log.d("TAG", "sending log 444 deleting log from db ${log.id}")
-                    mDataBase?.delete(log.id)
-                }
-                Log.d("TAG","xxxxxxxxxxxxxxxxxxxx--END---xxxxxxxxxxxxxxxxxxxxx")
-                /* Small delay before sending over next log. */
-                /*delay(
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                for (log in logs) {
+                    Log.d(
+                        "TAG",
+                        "-------------------------START-----------------------------------"
+                    )
+                    Log.d("TAG", "sending log *** getting new log ${log.id}")
+                    /* If log was successfully sent over, delete it from database. */
+                    val request = Gson().fromJson(
+                        log.json,
+                        MIDDetailsRequest::class.java
+                    )
+                    val isSend = sendLog(context, request)
+                    Log.d("TAG", "sending log 333 returning received ${log.id}")
+                    if (isSend) {
+                        Log.d("TAG", "sending log 444 deleting log from db ${log.id}")
+                        mDataBase?.delete(log.id)
+                    }
+                    Log.d("TAG", "xxxxxxxxxxxxxxxxxxxx--END---xxxxxxxxxxxxxxxxxxxxx")
+                    /* Small delay before sending over next log. */
+                    /*delay(
                     DELAY_MS.toLong()
                 )*/
+                }
             }
+        }catch (ex : Exception) {
+            Log.e("TAG", "Exception sending logs to server ${ex.message}")
         }
     }
 
@@ -138,23 +129,25 @@ object DocumentLogger {
         if (null == log) return false
         Log.d("TAG", "sending log 111")
         mutex.withLock {
-            log.addImageBitmap(decodeBase64(log.imageData))
-            val file: File
-            if (log.imageBitmap != null) {
-                try {
-                    file = File(context.filesDir.toString() + "/file.png")
-                    val bos = ByteArrayOutputStream()
-                    log.imageBitmap?.compress(Bitmap.CompressFormat.PNG, 0, bos)
-                    val bitmapData = bos.toByteArray()
-                    //write your byteArray here
-                    val fos = FileOutputStream(file)
-                    fos.write(bitmapData)
-                    fos.flush()
-                    fos.close()
-                    log.addImage(file)
-                } catch (e: IOException) {
-                    Log.e("TAG", "Exception while creating file ${e.message}")
+            try {
+                if(log.imageData != null) {
+                    decodeBase64(log.imageData)?.let { log.addImageBitmap(it) }
+                    val file: File
+                    if (log.imageBitmap != null) {
+                        file = File(context.filesDir.toString() + "/file.png")
+                        val bos = ByteArrayOutputStream()
+                        log.imageBitmap?.compress(Bitmap.CompressFormat.PNG, 0, bos)
+                        val bitmapData = bos.toByteArray()
+                        //write your byteArray here
+                        val fos = FileOutputStream(file)
+                        fos.write(bitmapData)
+                        fos.flush()
+                        fos.close()
+                        log.addImage(file)
+                    }
                 }
+            }catch (e: IOException) {
+                Log.e("TAG", "Exception while creating file ${e.message}")
             }
             try {
                 val returnValue =  CIDRepository().submitDetailsToServer(log)
@@ -167,16 +160,24 @@ object DocumentLogger {
         }
     }
 
-    fun encodeToBase64(image: Bitmap): String{
-        val baos = ByteArrayOutputStream()
-        image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        val b = baos.toByteArray()
-        val imageEncoded: String = Base64.encodeToString(b, Base64.DEFAULT)
-        return imageEncoded
+    private fun encodeToBase64(image: Bitmap?): String?{
+        return if(image != null) {
+            val baos = ByteArrayOutputStream()
+            image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+            val b = baos.toByteArray()
+            val imageEncoded: String = Base64.encodeToString(b, Base64.DEFAULT)
+            imageEncoded
+        } else {
+            null
+        }
     }
 
-    fun decodeBase64(input: String?): Bitmap {
-        val decodedByte = Base64.decode(input, 0)
-        return BitmapFactory.decodeByteArray(decodedByte, 0, decodedByte.size)
+    private fun decodeBase64(input: String?): Bitmap? {
+        return if(input != null) {
+            val decodedByte = Base64.decode(input, 0)
+            BitmapFactory.decodeByteArray(decodedByte, 0, decodedByte.size)
+        } else {
+            null
+        }
     }
 }
