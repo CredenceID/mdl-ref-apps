@@ -9,8 +9,9 @@ import com.credenceid.midverifier.MainActivity
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("TAG", "Reboot detected .....")
-        val intent = Intent(context, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
+        var paramIntent = intent
+        paramIntent = Intent(context, MainActivity::class.java)
+        paramIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(paramIntent);
     }
 }
