@@ -243,7 +243,7 @@ class ShowDocumentFragment : Fragment() {
 
     fun createDetailsRequest(portraitBytes : ByteArray): NetworkHelper.MIDDetailsRequest {
         val mIDRequest = NetworkHelper.MIDDetailsRequest()
-        mIDRequest.createdOn = FormatUtil.getCreatedOn()
+        mIDRequest.createdOn = System.currentTimeMillis().toString()
         mIDRequest.imei = "356905071680409"
         mIDRequest.firstName = detailsMap["given_name"] ?: ""
         mIDRequest.lastName = detailsMap["family_name"] ?: ""

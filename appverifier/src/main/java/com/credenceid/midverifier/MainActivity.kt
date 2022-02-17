@@ -50,11 +50,6 @@ class MainActivity : AppCompatActivity() {
 
         //-- to capture all pending documents and send them to server
         DocumentLogger.sendCachedDocuments(this)
-        /*DefaultExecutorSupplier.getInstance().forLightWeightBackgroundTasks().execute(
-            Runnable {
-                SystemUtils.excGreenLeft()
-            }
-        )*/
     }
 
     override fun onResume() {
