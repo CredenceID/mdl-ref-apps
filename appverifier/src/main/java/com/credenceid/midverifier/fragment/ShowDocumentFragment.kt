@@ -273,13 +273,13 @@ class ShowDocumentFragment : Fragment() {
     }
 
     private fun registerResponseOnServer() {
-        viewModel.sendDeviceActivity().observe(viewLifecycleOwner, Observer {
+        /*viewModel.sendDeviceActivity().observe(viewLifecycleOwner, Observer {
             if(it.equals("SUCCESS", true)) {
                 Log.d(LOG_TAG, "Response received from the Server")
             } else {
                 Log.e(LOG_TAG,"Error while receiving response from server : $it")
             }
-        })
+        })*/
 
         portraitBytes?.let { createDetailsRequest(portraitBytes = it) }?.let {
             viewModel.sendMIDDetails(requireContext(),
