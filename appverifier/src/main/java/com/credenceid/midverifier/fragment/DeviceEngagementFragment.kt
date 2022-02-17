@@ -24,6 +24,7 @@ import com.credenceid.midverifier.R
 import com.credenceid.midverifier.databinding.FragmentDeviceEngagementBinding
 import com.credenceid.midverifier.transfer.TransferManager
 import com.credenceid.midverifier.util.DefaultExecutorSupplier
+import com.credenceid.midverifier.util.SystemUtils
 import com.credenceid.midverifier.util.TransferStatus
 
 
@@ -77,7 +78,7 @@ class DeviceEngagementFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        startCircularBlueLED()
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
@@ -85,11 +86,11 @@ class DeviceEngagementFragment : Fragment() {
                     requireActivity().finish()
                 }
             })
-        DefaultExecutorSupplier.getInstance().forLightWeightBackgroundTasks().execute(
+        /*DefaultExecutorSupplier.getInstance().forLightWeightBackgroundTasks().execute(
             Runnable {
-                //SystemUtils.excGreenLeft()
+                SystemUtils.excGreenLeft()
             }
-        )
+        )*/
         // QR Code Engagement
         mCodeScanner = CodeScanner(requireContext(), binding.csScanner)
         mCodeScanner?.decodeCallback = DecodeCallback { result ->
@@ -101,6 +102,24 @@ class DeviceEngagementFragment : Fragment() {
         }
 
         binding.csScanner.setOnClickListener { mCodeScanner?.startPreview() }
+
+        binding.button.setOnClickListener {
+            SystemUtils.setSystemState(SystemUtils.EMPTY_STATE)
+            DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
+                Runnable {
+                    SystemUtils.turnOffLights()
+                }
+            )
+        }
+
+        binding.button2.setOnClickListener {
+            SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
+            DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
+                Runnable {
+                    SystemUtils.execBlueCircle()
+                }
+            )
+        }
 
         transferManager.getTransferStatus().observe(viewLifecycleOwner, {
             when (it) {
@@ -147,6 +166,15 @@ class DeviceEngagementFragment : Fragment() {
             requireActivity().finish()
             //findNavController().navigate(R.id.action_ScanDeviceEngagement_to_RequestOptions)
         }
+    }
+
+    private fun startCircularBlueLED() {
+        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
+            Runnable {
+                SystemUtils.execBlueCircle()
+            }
+        )
     }
 
     override fun onResume() {
@@ -244,6 +272,9 @@ class DeviceEngagementFragment : Fragment() {
                 )
             }
         }
+
+        // start Other LED -- change state
+        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_EXCHANGE)
 
         /*if (transferManager.availableMdocAddresses?.size == 1) {
             findNavController().navigate(
