@@ -169,7 +169,7 @@ class DeviceEngagementFragment : Fragment() {
     }
 
     private fun startCircularBlueLED() {
-       /* DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
             Runnable {
                 SystemUtils.turnOffLights()
             }
@@ -178,7 +178,7 @@ class DeviceEngagementFragment : Fragment() {
             Runnable {
                 SystemUtils.execBlueCircle()
             }
-        )*/
+        )
     }
 
     override fun onResume() {
