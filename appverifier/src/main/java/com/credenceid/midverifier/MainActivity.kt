@@ -12,6 +12,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.credenceid.midverifier.logger.DocumentLogger
 import com.credenceid.midverifier.util.NetworkHelper
+import com.credenceid.midverifier.util.SystemUtils
 
 class MainActivity : AppCompatActivity() {
 
@@ -78,5 +79,10 @@ class MainActivity : AppCompatActivity() {
             else -> navController.navigateUp(appBarConfiguration)
                     || super.onSupportNavigateUp()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        SystemUtils.setSystemState(SystemUtils.EMPTY_STATE)
     }
 }
