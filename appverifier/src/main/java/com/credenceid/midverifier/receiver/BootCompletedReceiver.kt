@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.credenceid.midverifier.MainActivity
+import com.credenceid.midverifier.util.SystemUtils
 
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -13,5 +14,6 @@ class BootCompletedReceiver : BroadcastReceiver() {
         paramIntent = Intent(context, MainActivity::class.java)
         paramIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(paramIntent);
+        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
     }
 }

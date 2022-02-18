@@ -214,6 +214,57 @@ public class SystemUtils {
 		}
 	}
 
+	public static void execGreenCircle() {
+		try {
+			Log.d("TAG", "exec green ..");
+			String value = "255";
+			String[] d2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d1/brightness"};
+			String[] d5 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d4/brightness"};
+			String[] d8 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7/brightness"};
+			String[] d5_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d4_1/brightness"};
+			String[] d8_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7_1/brightness"};
+			String[] d2_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d1_1/brightness"};
+			String[] d5_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d4_2/brightness"};
+			String[] d8_2_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d1_2/brightness"};
+			String[] d8_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7_2/brightness"};
+
+			String emptyValue = "0";
+			String[][] d2_E =  {{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d1/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d4/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d7/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d4_1/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d7_1/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d1_1/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d4_2/brightness"},
+					{ "sh", "-c", "echo "+emptyValue+" > /sys/class/leds/d1_2/brightness"},
+					{ "sh", "-c","echo "+emptyValue+" > /sys/class/leds/d7_2/brightness"}};
+
+			while (STATE_WAITING_FOR_TRANSFER == getSystemState()) {
+				exec(d2);
+				SystemUtils.sleep(200);
+				exec(d5);
+				SystemUtils.sleep(200);
+				exec(d8);
+				SystemUtils.sleep(200);
+				exec(d5_1);
+				SystemUtils.sleep(200);
+				exec(d8_1);
+				SystemUtils.sleep(200);
+				exec(d2_1);
+				SystemUtils.sleep(200);
+				exec(d5_2);
+				SystemUtils.sleep(200);
+				exec(d8_2_2);
+				SystemUtils.sleep(200);
+				exec(d8_2);
+				SystemUtils.sleep(200);
+				turnOffGreen(d2_E);
+			}
+		} catch(Exception ex) {
+
+		}
+	}
+
 	public static void turnOffGreen(String [][] values) {
 		for (String[] value : values) {
 			exec(value);

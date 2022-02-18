@@ -169,12 +169,16 @@ class DeviceEngagementFragment : Fragment() {
     }
 
     private fun startCircularBlueLED() {
-        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
+       /* DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
+            Runnable {
+                SystemUtils.turnOffLights()
+            }
+        )
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
             Runnable {
                 SystemUtils.execBlueCircle()
             }
-        )
+        )*/
     }
 
     override fun onResume() {
@@ -265,11 +269,14 @@ class DeviceEngagementFragment : Fragment() {
         } else {
             if (transferManager.availableMdocAddresses?.size == 1) {
                 val mDocAddress = transferManager.availableMdocAddresses?.toList()?.get(0)
-                findNavController().navigate(
-                    DeviceEngagementFragmentDirections.actionScanDeviceEngagementToTransfer(
-                        args.requestDocumentList
+                mDocAddress?.let {
+                    transferManager.setMdocAddress(it)
+                    findNavController().navigate(
+                        DeviceEngagementFragmentDirections.actionScanDeviceEngagementToTransfer(
+                            args.requestDocumentList
+                        )
                     )
-                )
+                }
             }
         }
 
