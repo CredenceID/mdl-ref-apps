@@ -12,6 +12,7 @@ import androidx.security.identity.IdentityCredentialStoreCapabilities.FEATURE_VE
 import co.nstant.`in`.cbor.CborBuilder
 import co.nstant.`in`.cbor.model.UnicodeString
 import com.android.mdl.app.R
+import com.android.mdl.app.model.DLPersonalDetails
 import com.android.mdl.app.provisioning.RefreshAuthenticationKeyFlow
 import com.android.mdl.app.util.DocumentData
 import com.android.mdl.app.util.DocumentData.DUMMY_CREDENTIAL_NAME
@@ -105,6 +106,7 @@ class DocumentManager private constructor(private val context: Context) {
         runBlocking {
             // Load created documents from local database
             val documents = documentRepository.getAll()
+            Log.d("DocManager", documents.toString())
 
             if (documents.isEmpty()) {
                 // Create the dummy credential...
@@ -115,6 +117,15 @@ class DocumentManager private constructor(private val context: Context) {
                 documentRepository.insert(createDummyMicovDocument(store))
             }
         }
+    }
+
+    suspend fun updateCreatedDocuments(personalDetails : DLPersonalDetails?) {
+            // Create the dummy credential...
+        documentRepository.insert(createDummyCredential(store, personalDetails))
+        // Create dummy mVR document...
+        documentRepository.insert(createDummyMvrDocument(store))
+        // Create dummy micov document...
+        documentRepository.insert(createDummyMicovDocument(store))
     }
 
     private fun createDummyMicovDocument(store: IdentityCredentialStore): Document {
@@ -393,9 +404,9 @@ class DocumentManager private constructor(private val context: Context) {
         )
     }
 
-    private fun createDummyCredential(store: IdentityCredentialStore): Document {
+    private fun createDummyCredential(store: IdentityCredentialStore, personalDetails : DLPersonalDetails? = null): Document {
         try {
-            provisionMdlDocument()
+            provisionMdlDocument(personalDetails)
             return Document(
                 MDL_DOCTYPE,
                 DUMMY_CREDENTIAL_NAME,
@@ -411,18 +422,32 @@ class DocumentManager private constructor(private val context: Context) {
         }
     }
 
-    fun provisionMdlDocument() {
+    fun provisionMdlDocument(personalDetails : DLPersonalDetails? = null) {
+
+        val name = if(personalDetails?.name.isNullOrEmpty()) "Erika" else personalDetails?.name
+        val lastName = if(personalDetails?.name.isNullOrEmpty()) "Mustermann" else personalDetails?.lastName
+
         val iaSelfSignedCert = KeysAndCertificates.getMdlDsCertificate(context)
-        val bitmap = BitmapFactory.decodeResource(
-            context.resources,
-            R.drawable.img_erika_portrait
-        )
+        val licenceBg = personalDetails?.licenceDB?:0
+        val bitmap = if(licenceBg != 0) {
+            BitmapFactory.decodeResource(
+                context.resources,
+                licenceBg
+            )
+        }else {
+            BitmapFactory.decodeResource(
+                context.resources,
+                R.drawable.img_erika_portrait
+            )
+        }
         val baos = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
         val portrait: ByteArray = baos.toByteArray()
         ids = getAccessProfileIds()
-
-        val birthDate = UnicodeString("1971-09-01")
+        val birthDate = if (!personalDetails?.dob.isNullOrEmpty()) {
+            UnicodeString(personalDetails?.dob)
+        } else
+            UnicodeString("1971-09-01")
         birthDate.setTag(1004)
         val issueDate = UnicodeString("2021-04-18")
         issueDate.setTag(1004)
@@ -450,8 +475,8 @@ class DocumentManager private constructor(private val context: Context) {
             .end()
             .build()[0]
         val personalizationData = PersonalizationData.Builder()
-            .putEntryString(DocumentData.MDL_NAMESPACE, "given_name", ids, "Erika")
-            .putEntryString(DocumentData.MDL_NAMESPACE, "family_name", ids, "Mustermann")
+            .putEntryString(DocumentData.MDL_NAMESPACE, "given_name", ids, name ?: "Erika" )
+            .putEntryString(DocumentData.MDL_NAMESPACE, "family_name", ids, lastName ?: "Mustermann")
             .putEntry(
                 DocumentData.MDL_NAMESPACE,
                 "birth_date",

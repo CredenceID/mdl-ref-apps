@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/RequestOptions"
-        android:name="com.android.mdl.appreader.fragment.RequestOptionsFragment"
+        android:name="com.credenceid.midverifier.fragment.RequestOptionsFragment"
         android:label="mDL Ref App - Verifier"
         tools:layout="@layout/fragment_request_options">
         <argument
@@ -29,7 +29,7 @@
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="com.android.mdl.appreader.fragment.SettingsFragment"
+        android:name="com.credenceid.midverifier.fragment.SettingsFragment"
         android:label="Settings">
         <action
             android:id="@+id/action_settingsFragment_to_RequestOptions"
@@ -37,16 +37,16 @@
     </fragment>
     <fragment
         android:id="@+id/RequestCustom"
-        android:name="com.android.mdl.appreader.fragment.RequestCustomFragment"
+        android:name="com.credenceid.midverifier.fragment.RequestCustomFragment"
         android:label="Custom Request"
         tools:layout="@layout/fragment_request_custom">
         <argument
             android:name="requestDocument"
-            app:argType="com.android.mdl.appreader.document.RequestDocument"
+            app:argType="com.credenceid.midverifier.document.RequestDocument"
             app:nullable="false" />
         <argument
             android:name="requestDocumentList"
-            app:argType="com.android.mdl.appreader.document.RequestDocumentList"
+            app:argType="com.credenceid.midverifier.document.RequestDocumentList"
             app:nullable="false" />
         <argument
             android:name="keepConnection"
@@ -61,12 +61,12 @@
     </fragment>
     <fragment
         android:id="@+id/ScanDeviceEngagement"
-        android:name="com.android.mdl.appreader.fragment.DeviceEngagementFragment"
+        android:name="com.credenceid.midverifier.fragment.DeviceEngagementFragment"
         android:label="Device Engagement"
         tools:layout="@layout/fragment_device_engagement">
         <argument
             android:name="requestDocumentList"
-            app:argType="com.android.mdl.appreader.document.RequestDocumentList"
+            app:argType="com.credenceid.midverifier.document.RequestDocumentList"
             app:nullable="false" />
         <action
             android:id="@+id/action_ScanDeviceEngagement_to_RequestOptions"
@@ -80,12 +80,12 @@
     </fragment>
     <fragment
         android:id="@+id/SelectTransport"
-        android:name="com.android.mdl.appreader.fragment.SelectTransportFragment"
+        android:name="com.credenceid.midverifier.fragment.SelectTransportFragment"
         android:label="Select Transport"
         tools:layout="@layout/fragment_select_transport">
         <argument
             android:name="requestDocumentList"
-            app:argType="com.android.mdl.appreader.document.RequestDocumentList"
+            app:argType="com.credenceid.midverifier.document.RequestDocumentList"
             app:nullable="false" />
         <action
             android:id="@+id/action_SelectTransport_to_Transfer"
@@ -96,12 +96,12 @@
     </fragment>
     <fragment
         android:id="@+id/Transfer"
-        android:name="com.android.mdl.appreader.fragment.TransferFragment"
+        android:name="com.credenceid.midverifier.fragment.TransferFragment"
         android:label="Transfer Status"
         tools:layout="@layout/fragment_transfer">
         <argument
             android:name="requestDocumentList"
-            app:argType="com.android.mdl.appreader.document.RequestDocumentList"
+            app:argType="com.credenceid.midverifier.document.RequestDocumentList"
             app:nullable="false" />
         <argument
             android:name="keepConnection"
@@ -116,7 +116,7 @@
     </fragment>
     <fragment
         android:id="@+id/ShowDocument"
-        android:name="com.android.mdl.appreader.fragment.ShowDocumentFragment"
+        android:name="com.credenceid.midverifier.fragment.ShowDocumentFragment"
         android:label="Show Document"
         tools:layout="@layout/fragment_show_document">
         <action

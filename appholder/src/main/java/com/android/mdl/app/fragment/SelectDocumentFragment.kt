@@ -8,7 +8,6 @@ import android.view.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -16,6 +15,7 @@ import com.android.mdl.app.R
 import com.android.mdl.app.adapter.DocumentAdapter
 import com.android.mdl.app.databinding.FragmentSelectDocumentBinding
 import com.android.mdl.app.document.DocumentManager
+import com.android.mdl.app.model.DLPersonalDetails
 import com.android.mdl.app.transfer.TransferManager
 import org.jetbrains.anko.support.v4.toast
 
@@ -121,6 +121,12 @@ class SelectDocumentFragment : Fragment() {
     fun onPresentDocuments() {
         findNavController().navigate(
             SelectDocumentFragmentDirections.actionSelectDocumentFragmentToShareDocumentFragment()
+        )
+    }
+
+    fun updateMDLData() {
+        findNavController().navigate(
+            SelectDocumentFragmentDirections.actionSelectDocumentFragmentToModifyDetailsFragment()
         )
     }
 

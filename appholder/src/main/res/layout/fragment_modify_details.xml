@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="fragment"
+            type="com.android.mdl.app.fragment.ModifyDetailsFragment" />
+
+    </data>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:context=".fragment.ModifyDetailsFragment">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/text_input_first_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_marginBottom="12dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/text_enter_details_to_update_DL"
+                app:layout_constraintVertical_bias="0.03999999">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_input_first_name"
+                    android:textSize="14sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/enter_first_name" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/text_input_last_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_marginBottom="12dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/text_input_first_name"
+                app:layout_constraintVertical_bias="0.040000024">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_input_last_name"
+                    android:textSize="14sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/enter_last_name" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/text_enter_details_to_update_DL"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_update_details"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.03" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/text_input_dob"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_marginBottom="40dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/text_input_last_name"
+                app:layout_constraintVertical_bias="0.050000024">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_input_dob"
+                    android:textSize="14sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/enter_dob" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Button
+                android:id="@+id/btn_select_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_marginBottom="12dp"
+                android:onClick="@{() -> fragment.onSelectImage()}"
+                android:text="@string/select_image"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/text_input_dob"
+                app:layout_constraintVertical_bias="0.13999999" />
+
+            <Button
+                android:id="@+id/btn_update_document"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:layout_marginBottom="12dp"
+                android:onClick="@{() -> fragment.onUpdateDocument()}"
+                android:text="@string/update_mdl_document"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/radioGroup"
+                app:layout_constraintVertical_bias="0.11" />
+
+            <Button
+                android:id="@+id/bt_cancel"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:layout_marginStart="28dp"
+                android:onClick="@{() -> fragment.onCancel()}"
+                android:text="@string/bt_cancel"
+                app:layout_constraintBottom_toBottomOf="@+id/btn_update_document"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/btn_update_document" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:visibility="gone"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <RadioGroup
+                android:id="@+id/radioGroup"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView2"
+                app:layout_constraintVertical_bias="0.08999999">
+
+                <RelativeLayout
+                    android:id="@+id/radio1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:onClick="@{() -> fragment.onSelectPicture1()}"
+                    android:orientation="vertical">
+
+                    <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/licenceImage1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:button="@null" />
+
+                    <ImageButton
+                        android:layout_width="90dp"
+                        android:layout_height="120dp"
+                        android:onClick="@{() -> fragment.onSelectPicture1()}"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_licence_2" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/radio2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:onClick="@{() -> fragment.onSelectPicture2()}"
+                    android:orientation="vertical">
+
+
+                    <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/licenceImage2"
+                        android:layout_width="1dp"
+                        android:layout_height="1dp"
+                        android:layout_centerInParent="true"
+                        android:button="@null" />
+
+                    <ImageButton
+                        android:layout_width="80dp"
+                        android:layout_height="120dp"
+                        android:onClick="@{() -> fragment.onSelectPicture2()}"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_erika_portrait" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/radio3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:onClick="@{() -> fragment.onSelectPicture3()}"
+                    android:orientation="vertical">
+
+
+                    <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/licenceImage3"
+                        android:layout_width="1dp"
+                        android:layout_height="1dp"
+                        android:layout_centerInParent="true"
+                        android:button="@null" />
+
+                    <ImageButton
+                        android:layout_width="80dp"
+                        android:layout_height="120dp"
+                        android:onClick="@{() -> fragment.onSelectPicture3()}"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/img_licence_3" />
+                </RelativeLayout>
+                <!--<androidx.appcompat.widget.AppCompatRadioButton
+                    android:id="@+id/licenceImage3"
+                    android:layout_width="80dp"
+                    android:layout_height="120dp"
+                    android:layout_margin="8dp"
+                    android:button="@drawable/img_erika_portrait" />-->
+
+            </RadioGroup>
+
+            <TextView
+                android:layout_margin="16dp"
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:text="Select image"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/text_input_dob"
+                app:layout_constraintVertical_bias="0.0" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</layout>
