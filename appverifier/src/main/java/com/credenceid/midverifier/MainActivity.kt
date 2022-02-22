@@ -26,9 +26,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
         setContentView(R.layout.activity_main)
         NetworkHelper.initRetrofit()
-
         val navController = findNavController(R.id.nav_host_fragment)
         appBarConfiguration = AppBarConfiguration(
             setOf(

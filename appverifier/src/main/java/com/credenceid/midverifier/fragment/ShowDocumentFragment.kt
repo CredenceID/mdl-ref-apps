@@ -10,14 +10,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.security.identity.DeviceResponseParser
 import com.credenceid.midverifier.R
 import com.credenceid.midverifier.databinding.FragmentShowDocumentBinding
 import com.credenceid.midverifier.issuerauth.SimpleIssuerTrustStore
-import com.credenceid.midverifier.logger.DocumentLogger
 import com.credenceid.midverifier.transfer.TransferManager
 import com.credenceid.midverifier.util.*
 import com.credenceid.midverifier.viewModel.ShowDocumentViewModel
@@ -117,7 +115,7 @@ class ShowDocumentFragment : Fragment() {
                 TransferStatus.RESPONSE -> {
                     Log.d(LOG_TAG, "Device response received.")
                     //----Set LED state
-                    //startGreenProgressForLED()
+                    SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TRANSFER)
                     registerResponseOnServer()
                 }
                 TransferStatus.DISCONNECTED -> {
@@ -141,15 +139,6 @@ class ShowDocumentFragment : Fragment() {
                 }
             }
         }
-    }
-
-    private fun startGreenProgressForLED() {
-        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TRANSFER)
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
-            Runnable {
-                SystemUtils.execGreenCircle()
-            }
-        )
     }
 
     private fun hideButtons() {
@@ -302,7 +291,6 @@ class ShowDocumentFragment : Fragment() {
         )
         hideButtons()
         //calling OK click
-        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
         findNavController().navigate(R.id.action_ShowDocument_to_RequestOptions)
     }
 

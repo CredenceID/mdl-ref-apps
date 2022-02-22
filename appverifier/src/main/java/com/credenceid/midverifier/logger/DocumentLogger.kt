@@ -8,6 +8,7 @@ import android.util.Log
 import com.credenceid.midverifier.repository.CIDRepository
 import com.credenceid.midverifier.util.NetworkHelper.MIDDetailsRequest
 import com.credenceid.midverifier.util.NetworkUtils.hasInternet
+import com.credenceid.midverifier.util.SystemUtils
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -152,6 +153,8 @@ object DocumentLogger {
             try {
                 val returnValue =  CIDRepository().submitDetailsToServer(log)
                 Log.d("TAG", "sending log 222 returning value ")
+                // Setting value for tap------
+                SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
                 return returnValue
             } catch (e: java.lang.Exception) {
                 Log.w("TAG", "Unable to send analytic(s) to server." + e.message)
