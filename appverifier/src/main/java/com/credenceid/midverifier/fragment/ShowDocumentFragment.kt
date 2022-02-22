@@ -232,7 +232,8 @@ class ShowDocumentFragment : Fragment() {
         }
         //--------------
         if(elem.equals("given_name",true) || elem.equals("family_name",true)
-            || elem.equals("birth_date",true) || elem.equals("document_number", true)) {
+            || elem.equals("birth_date",true) || elem.equals("document_number", true)
+            || elem.equals("expiry_date", true) || elem.equals("issue_date", true)) {
             detailsMap[elem] = elementValue
         }
     }

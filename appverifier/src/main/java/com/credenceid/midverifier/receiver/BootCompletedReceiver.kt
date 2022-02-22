@@ -14,6 +14,5 @@ class BootCompletedReceiver : BroadcastReceiver() {
         paramIntent = Intent(context, MainActivity::class.java)
         paramIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(paramIntent);
-        SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
     }
 }
