@@ -78,7 +78,6 @@ class DeviceEngagementFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        //startCircularBlueLED()
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
@@ -86,11 +85,6 @@ class DeviceEngagementFragment : Fragment() {
                     requireActivity().finish()
                 }
             })
-        /*DefaultExecutorSupplier.getInstance().forLightWeightBackgroundTasks().execute(
-            Runnable {
-                SystemUtils.excGreenLeft()
-            }
-        )*/
         // QR Code Engagement
         mCodeScanner = CodeScanner(requireContext(), binding.csScanner)
         mCodeScanner?.decodeCallback = DecodeCallback { result ->
@@ -122,43 +116,47 @@ class DeviceEngagementFragment : Fragment() {
         }
 
         transferManager.getTransferStatus().observe(viewLifecycleOwner, {
-            when (it) {
-                TransferStatus.ENGAGED -> {
-                    Log.d(LOG_TAG, "Device engagement received")
-                    onDeviceEngagementReceived()
+            try {
+                when (it) {
+                    TransferStatus.ENGAGED -> {
+                        Log.d(LOG_TAG, "Device engagement received")
+                        onDeviceEngagementReceived()
+                    }
+                    TransferStatus.CONNECTED -> {
+                        Log.d(LOG_TAG, "Device connected")
+                        Toast.makeText(
+                            requireContext(), "Error invalid callback connected",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
+                    }
+                    TransferStatus.RESPONSE -> {
+                        Log.d(LOG_TAG, "Device response received")
+                        Toast.makeText(
+                            requireContext(), "Error invalid callback response",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
+                    }
+                    TransferStatus.DISCONNECTED -> {
+                        Log.d(LOG_TAG, "Device disconnected")
+                        Toast.makeText(
+                            requireContext(), "Device disconnected",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
+                    }
+                    TransferStatus.ERROR -> {
+                        Log.d(LOG_TAG, "Error received")
+                        Toast.makeText(
+                            requireContext(), "Error connecting to holder",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
+                    }
                 }
-                TransferStatus.CONNECTED -> {
-                    Log.d(LOG_TAG, "Device connected")
-                    Toast.makeText(
-                        requireContext(), "Error invalid callback connected",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
-                }
-                TransferStatus.RESPONSE -> {
-                    Log.d(LOG_TAG, "Device response received")
-                    Toast.makeText(
-                        requireContext(), "Error invalid callback response",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
-                }
-                TransferStatus.DISCONNECTED -> {
-                    Log.d(LOG_TAG, "Device disconnected")
-                    Toast.makeText(
-                        requireContext(), "Device disconnected",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
-                }
-                TransferStatus.ERROR -> {
-                    Log.d(LOG_TAG, "Error received")
-                    Toast.makeText(
-                        requireContext(), "Error connecting to holder",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
-                }
+            }catch ( ex :Exception) {
+                Log.e("TAG", "Exception while navigation ${ex.message}")
             }
         })
 
@@ -166,19 +164,6 @@ class DeviceEngagementFragment : Fragment() {
             requireActivity().finish()
             //findNavController().navigate(R.id.action_ScanDeviceEngagement_to_RequestOptions)
         }
-    }
-
-    private fun startCircularBlueLED() {
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
-            Runnable {
-                SystemUtils.turnOffLights()
-            }
-        )
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
-            Runnable {
-                SystemUtils.execBlueCircle()
-            }
-        )
     }
 
     override fun onResume() {
