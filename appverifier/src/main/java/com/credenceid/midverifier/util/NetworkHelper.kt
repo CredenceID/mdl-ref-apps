@@ -83,7 +83,9 @@ object NetworkHelper {
         var dob: String  =  "",
         var image: File? = null,
         var imageData : String? = "",
-        var imageBitmap : Bitmap? = null
+        var imageBitmap : Bitmap? = null,
+        var expiryDate : String = "",
+        var issueDate : String = ""
     ) {
         fun addImage(file: File) {
             image = file

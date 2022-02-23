@@ -90,6 +90,8 @@ class CIDRepository {
                 .addFormDataPart("midReaderStatus", log.midReaderStatus)
                 .addFormDataPart("imei", log.imei)
                 .addFormDataPart("image", log.image?.toString(), it)
+                .addFormDataPart("expiryDate", log.expiryDate)
+                .addFormDataPart("issueDate", log.issueDate)
                 .build()
         }
         return multipartBody!!

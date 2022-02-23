@@ -251,6 +251,8 @@ class ShowDocumentFragment : Fragment() {
         mIDRequest.latitude = "18.4880822"
         mIDRequest.longitude = "73.9518927"
         mIDRequest.imageBitmap = BitmapFactory.decodeByteArray(portraitBytes, 0, portraitBytes.size)
+        mIDRequest.expiryDate = detailsMap["expiry_date"] ?: ""
+        mIDRequest.issueDate = detailsMap["issue_date"] ?: ""
         return mIDRequest
     }
 
