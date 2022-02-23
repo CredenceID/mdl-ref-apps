@@ -441,14 +441,14 @@ public class SystemUtils {
             @Override
             public void run() {
                 SystemUtils.turnOffLights();
-            }
-        });
-        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
-            @Override
-            public void run() {
                 SystemUtils.execBlueCircle();
             }
         });
+        /*DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
+            @Override
+            public void run() {
+            }
+        });*/
     }
 
     private static void startGreenProgressForLED() {
