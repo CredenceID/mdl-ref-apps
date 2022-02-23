@@ -228,7 +228,7 @@ public class SystemUtils {
                 SystemUtils.sleep(delay);
                 exec(d8_2);
                 SystemUtils.sleep(delay);
-                turnOffGreen(d2_E);
+                turnOff(d2_E);
             }
             turnOffLights();
         } catch (Exception ex) {
@@ -261,8 +261,9 @@ public class SystemUtils {
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d5_2/brightness"},
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d2_2/brightness"},
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d8_2/brightness"}};
-            SystemUtils.sleep(100);
+
             while (STATE_WAITING_FOR_EXCHANGE == getSystemState()) {
+                SystemUtils.sleep(200);
                 exec(d2);
                 exec(d5);
                 exec(d8);
@@ -275,8 +276,7 @@ public class SystemUtils {
                 exec(d2_1);
 
                 SystemUtils.sleep(200);
-                turnOffGreen(d2_E);
-                SystemUtils.sleep(200);
+                turnOff(d2_E);
             }
         } catch (Exception ex) {
 
@@ -327,14 +327,14 @@ public class SystemUtils {
                 //SystemUtils.sleep(200);
                 //exec(d8_2);
                 //SystemUtils.sleep(200);
-                turnOffGreen(d2_E);
+                turnOff(d2_E);
             }
         } catch (Exception ex) {
 
         }
     }
 
-    public static void turnOffGreen(String[][] values) {
+    public static void turnOff(String[][] values) {
         for (String[] value : values) {
             exec(value);
             System.out.println("");
@@ -464,9 +464,24 @@ public class SystemUtils {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
             @Override
             public void run() {
+
                 SystemUtils.execGreenCircle();
             }
         });
+    }
+
+    private static void turnOffGreenLights() {
+        String emptyValue = "0";
+        String[][] d2_E = {{"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d6/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d6_1/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9_1/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3_1/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d6_2/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3_2/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9_2/brightness"}};
+        turnOff(d2_E);
     }
 
     private static void startRedLights() {
