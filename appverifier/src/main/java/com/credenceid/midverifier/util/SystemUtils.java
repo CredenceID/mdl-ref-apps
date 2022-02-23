@@ -488,7 +488,7 @@ public class SystemUtils {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
             @Override
             public void run() {
-                //SystemUtils.turnOffLights();
+                SystemUtils.turnOffLights();
                 SystemUtils.execRedCircle();
             }
         });
