@@ -32,12 +32,15 @@ public class SystemUtils {
         SystemUtils.systemState = systemState;
         switch (systemState) {
             case STATE_WAITING_FOR_TAP:
+                Log.d("TAG", "stating BLUE LEDs");
                 startCircularBlueLED();
                 break;
             case STATE_WAITING_FOR_EXCHANGE:
+                Log.d("TAG", "stating RED LEDs");
                 startRedLights();
                 break;
             case STATE_WAITING_FOR_TRANSFER:
+                Log.d("TAG", "stating GREEN LEDs");
                 startGreenProgressForLED();
                 break;
 
@@ -146,28 +149,33 @@ public class SystemUtils {
         String[] d6_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d6_2/brightness"};
         String[] d7_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7_1/brightness"};
         String[] d7_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7_2/brightness"};
+        String[] d9_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_1/brightness"};
+        String[] d9_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_2/brightness"};
+
+        exec(d3);
+        exec(d6);
+        exec(d9);
+        exec(d3_1);
+        exec(d3_2);
+        exec(d6_1);
+        exec(d6_2);
+        exec(d9_1);
+        exec(d9_2);
 
         exec(d1);
         exec(d2);
-        exec(d3);
         exec(d4);
         exec(d5);
-        exec(d6);
         exec(d7);
         exec(d8);
-        exec(d9);
         exec(d1_1);
         exec(d1_2);
         exec(d2_1);
         exec(d2_2);
-        exec(d3_1);
-        exec(d3_2);
         exec(d4_1);
         exec(d4_2);
         exec(d5_1);
         exec(d5_2);
-        exec(d6_1);
-        exec(d6_2);
         exec(d7_1);
         exec(d7_2);
         exec(d8_1);
@@ -464,6 +472,7 @@ public class SystemUtils {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
             @Override
             public void run() {
+                SystemUtils.turnOffLights();
                 SystemUtils.execRedCircle();
             }
         });
