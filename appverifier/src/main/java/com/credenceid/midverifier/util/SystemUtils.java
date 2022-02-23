@@ -230,6 +230,7 @@ public class SystemUtils {
                 SystemUtils.sleep(delay);
                 turnOffGreen(d2_E);
             }
+            turnOffLights();
         } catch (Exception ex) {
 
         }
@@ -260,7 +261,7 @@ public class SystemUtils {
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d5_2/brightness"},
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d2_2/brightness"},
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d8_2/brightness"}};
-
+            SystemUtils.sleep(100);
             while (STATE_WAITING_FOR_EXCHANGE == getSystemState()) {
                 exec(d2);
                 exec(d5);
@@ -472,7 +473,7 @@ public class SystemUtils {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
             @Override
             public void run() {
-                SystemUtils.turnOffLights();
+                //SystemUtils.turnOffLights();
                 SystemUtils.execRedCircle();
             }
         });
