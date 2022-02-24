@@ -13,6 +13,7 @@ import androidx.navigation.fragment.navArgs
 import com.credenceid.midverifier.R
 import com.credenceid.midverifier.databinding.FragmentTransferBinding
 import com.credenceid.midverifier.document.RequestDocumentList
+import com.credenceid.midverifier.util.SystemUtils
 import com.credenceid.midverifier.util.TransferStatus
 import com.credenceid.midverifier.viewModel.TransferViewModel
 
@@ -95,6 +96,7 @@ class TransferFragment : Fragment() {
                         requireContext(), "Error: Disconnected",
                         Toast.LENGTH_SHORT
                     ).show()
+                    SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
                     findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
                 }
                 TransferStatus.ERROR -> {
@@ -102,6 +104,7 @@ class TransferFragment : Fragment() {
                         requireContext(), "Error connecting to holder",
                         Toast.LENGTH_SHORT
                     ).show()
+                    SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
                     findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
                 }
             }
@@ -109,6 +112,7 @@ class TransferFragment : Fragment() {
 
         binding.btCancel.setOnClickListener {
             findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
+            SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
         }
     }
 

@@ -152,22 +152,6 @@ public class SystemUtils {
         String[] d9_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_1/brightness"};
         String[] d9_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_2/brightness"};
 
-        exec(d3);
-        exec(d6);
-        exec(d9);
-        exec(d3_1);
-        exec(d3_2);
-        exec(d6_1);
-        exec(d6_2);
-        exec(d9_1);
-        exec(d9_2);
-
-        exec(d1);
-        exec(d2);
-        exec(d4);
-        exec(d5);
-        exec(d7);
-        exec(d8);
         exec(d1_1);
         exec(d1_2);
         exec(d2_1);
@@ -180,6 +164,21 @@ public class SystemUtils {
         exec(d7_2);
         exec(d8_1);
         exec(d8_2);
+        exec(d3_1);
+        exec(d3_2);
+        exec(d6_1);
+        exec(d6_2);
+        exec(d9_1);
+        exec(d9_2);
+        exec(d3);
+        exec(d6);
+        exec(d9);
+        exec(d1);
+        exec(d2);
+        exec(d4);
+        exec(d5);
+        exec(d7);
+        exec(d8);
     }
 
 
@@ -464,7 +463,7 @@ public class SystemUtils {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
             @Override
             public void run() {
-
+                SystemUtils.turnOffLights();
                 SystemUtils.execGreenCircle();
             }
         });
@@ -488,6 +487,7 @@ public class SystemUtils {
         DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
             @Override
             public void run() {
+                SystemUtils.sleep(30L);
                 SystemUtils.turnOffLights();
                 SystemUtils.execRedCircle();
             }
