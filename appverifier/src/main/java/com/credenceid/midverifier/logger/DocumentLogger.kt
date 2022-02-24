@@ -135,9 +135,9 @@ object DocumentLogger {
                     decodeBase64(log.imageData)?.let { log.addImageBitmap(it) }
                     val file: File
                     if (log.imageBitmap != null) {
-                        file = File(context.filesDir.toString() + "/file.png")
+                        file = File(context.filesDir.toString() + "/file.jpg")
                         val bos = ByteArrayOutputStream()
-                        log.imageBitmap?.compress(Bitmap.CompressFormat.PNG, 0, bos)
+                        log.imageBitmap?.compress(Bitmap.CompressFormat.JPEG, 100, bos)
                         val bitmapData = bos.toByteArray()
                         //write your byteArray here
                         val fos = FileOutputStream(file)
