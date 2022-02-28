@@ -21,7 +21,6 @@ import androidx.navigation.fragment.navArgs
 import com.credenceid.midverifier.R
 import com.credenceid.midverifier.databinding.FragmentDeviceEngagementBinding
 import com.credenceid.midverifier.transfer.TransferManager
-import com.credenceid.midverifier.util.DefaultExecutorSupplier
 import com.credenceid.midverifier.util.SystemUtils
 import com.credenceid.midverifier.util.TransferStatus
 

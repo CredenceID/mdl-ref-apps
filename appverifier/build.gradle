@@ -64,11 +64,11 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
     // Camera code scanner
-    implementation 'com.budiyev.android:code-scanner:2.1.0'
+    //implementation 'com.budiyev.android:code-scanner:2.1.0'
 
     // Imported to use IC API
     implementation "org.java-websocket:Java-WebSocket:1.5.1"
-    implementation "com.google.zxing:core:3.3.3"
+    //implementation "com.google.zxing:core:3.3.3"
     implementation "org.slf4j:slf4j-api:1.7.25"
     implementation "org.slf4j:slf4j-log4j12:1.7.25"
     implementation 'androidx.preference:preference-ktx:1.1.1'
