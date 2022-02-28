@@ -21,7 +21,9 @@ public class SystemUtils {
     public static int EMPTY_STATE = 100;
     public static final int STATE_WAITING_FOR_TAP = 101;
     public static final int STATE_WAITING_FOR_EXCHANGE = 102;
-    public static final int STATE_WAITING_FOR_TRANSFER = 103;
+    //public static final int STATE_WAITING_FOR_TRANSFER = 103;
+    public static final int STATE_TRANSACTION_COMPLETE = 104;
+    public static final int STATE_BOOT_COMPLETED = 105;
     volatile public static int systemState = EMPTY_STATE;
 
     public static int getSystemState() {
@@ -33,15 +35,19 @@ public class SystemUtils {
         switch (systemState) {
             case STATE_WAITING_FOR_TAP:
                 Log.d("TAG", "stating BLUE LEDs");
-                //startCircularBlueLED();
+                startCircularBlueLED();
                 break;
             case STATE_WAITING_FOR_EXCHANGE:
                 Log.d("TAG", "stating RED LEDs");
+                startGreenProgressForLED();
+                break;
+            case STATE_TRANSACTION_COMPLETE:
+                Log.d("TAG", "stating GREEN LEDs");
+                startSolidGreenProgressForLED();
                 //startRedLights();
                 break;
-            case STATE_WAITING_FOR_TRANSFER:
-                Log.d("TAG", "stating GREEN LEDs");
-                //startGreenProgressForLED();
+            case STATE_BOOT_COMPLETED:
+                startBootCompleteBlueLED();
                 break;
 
         }
@@ -119,14 +125,13 @@ public class SystemUtils {
         String d5 = "echo " + value + " > /sys/class/leds/d5_2/brightness"; // bottom_left 5
     }
 
-
     public static void turnOffLights() {
+        String[] d5_1 = {"sh", "-c", "echo 0 > /sys/class/leds/d5_1/brightness"};
         Log.d("TAG", "exec turn off..");
         String value = "0";
         String[] d2 = {"sh", "-c", "echo 0 > /sys/class/leds/d2/brightness"};
         String[] d5 = {"sh", "-c", "echo 0 > /sys/class/leds/d5/brightness"};
         String[] d8 = {"sh", "-c", "echo 0 > /sys/class/leds/d8/brightness"};
-        String[] d5_1 = {"sh", "-c", "echo 0 > /sys/class/leds/d5_1/brightness"};
         String[] d8_1 = {"sh", "-c", "echo 0 > /sys/class/leds/d8_1/brightness"};
         String[] d2_1 = {"sh", "-c", "echo 0 > /sys/class/leds/d2_1/brightness"};
         String[] d5_2 = {"sh", "-c", "echo 0 > /sys/class/leds/d5_2/brightness"};
@@ -152,6 +157,10 @@ public class SystemUtils {
         String[] d9_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_1/brightness"};
         String[] d9_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_2/brightness"};
 
+        exec(d1);
+        exec(d2);
+        exec(d3);
+        exec(d4);
         exec(d1_1);
         exec(d1_2);
         exec(d2_1);
@@ -162,31 +171,26 @@ public class SystemUtils {
         exec(d5_2);
         exec(d7_1);
         exec(d7_2);
-        exec(d8_1);
-        exec(d8_2);
         exec(d3_1);
         exec(d3_2);
         exec(d6_1);
         exec(d6_2);
         exec(d9_1);
         exec(d9_2);
-        exec(d3);
         exec(d6);
         exec(d9);
-        exec(d1);
-        exec(d2);
-        exec(d4);
         exec(d5);
         exec(d7);
         exec(d8);
+        exec(d8_1);
+        exec(d8_2);
     }
-
 
     public static void execBlueCircle() {
         try {
             Log.d("TAG", "exec green ..");
             String value = "255";
-            long delay = 150L;
+            long delay = 500L;
             String[] d2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d3/brightness"};
             String[] d5 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d6/brightness"};
             String[] d8 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9/brightness"};
@@ -209,30 +213,61 @@ public class SystemUtils {
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9_2/brightness"}};
             Log.d("TAG", "System state is ===" + getSystemState());
             while (STATE_WAITING_FOR_TAP == getSystemState()) {
-                exec(d2);
-                SystemUtils.sleep(delay);
-                exec(d5);
-                SystemUtils.sleep(delay);
-                exec(d8);
-                SystemUtils.sleep(delay);
-                exec(d5_1);
-                SystemUtils.sleep(delay);
-                exec(d8_1);
-                SystemUtils.sleep(delay);
-                exec(d2_1);
-                SystemUtils.sleep(delay);
-                exec(d5_2);
-                SystemUtils.sleep(delay);
-                exec(d8_2_2);
-                SystemUtils.sleep(delay);
-                exec(d8_2);
-                SystemUtils.sleep(delay);
-                turnOff(d2_E);
+                    exec(d2);
+                    exec(d5);
+                    exec(d8);
+                    exec(d5_1);
+                    exec(d8_1);
+                    exec(d2_1);
+                    exec(d5_2);
+                    exec(d8_2_2);
+                    exec(d8_2);
             }
             turnOffLights();
         } catch (Exception ex) {
 
         }
+    }
+
+    public static void startBootCompleteBlueLED() {
+        Log.d("TAG", "exec green ..");
+        String value = "255";
+        long delay = 500L;
+        String[] d2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d3/brightness"};
+        String[] d5 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d6/brightness"};
+        String[] d8 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9/brightness"};
+        String[] d5_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d6_1/brightness"};
+        String[] d8_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_1/brightness"};
+        String[] d2_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d3_1/brightness"};
+        String[] d5_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d6_2/brightness"};
+        String[] d8_2_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d3_2/brightness"};
+        String[] d8_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d9_2/brightness"};
+
+        String emptyValue = "0";
+        String[][] d2_E = {{"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d6/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d6_1/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9_1/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3_1/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d6_2/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3_2/brightness"},
+                {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d9_2/brightness"}};
+        Log.d("TAG", "System state is ===" + getSystemState());
+        for (int i = 0; i < 3; i++) {
+            exec(d2);
+            exec(d5);
+            exec(d8);
+            exec(d5_1);
+            exec(d8_1);
+            exec(d2_1);
+            exec(d5_2);
+            exec(d8_2_2);
+            exec(d8_2);
+            turnOff(d2_E);
+            SystemUtils.sleep(delay);
+        }
+        setSystemState(STATE_WAITING_FOR_TAP);
     }
 
     public static void execRedCircle() {
@@ -273,9 +308,8 @@ public class SystemUtils {
                 exec(d8_2_2);
                 exec(d5_2);
                 exec(d2_1);
-
-                SystemUtils.sleep(200);
                 turnOff(d2_E);
+                SystemUtils.sleep(200);
             }
         } catch (Exception ex) {
 
@@ -307,30 +341,24 @@ public class SystemUtils {
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d1_2/brightness"},
                     {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d7_2/brightness"}};
 
-            while (STATE_WAITING_FOR_TRANSFER == getSystemState()) {
-                //exec(d2);
-                //SystemUtils.sleep(200);
-                //exec(d5);
-                //SystemUtils.sleep(200);
+            while (STATE_WAITING_FOR_EXCHANGE == getSystemState()) {
+                exec(d2);
+                exec(d5);
                 exec(d8);
-                SystemUtils.sleep(350);
                 exec(d5_1);
-                SystemUtils.sleep(350);
                 exec(d8_1);
-                SystemUtils.sleep(350);
                 exec(d2_1);
-                SystemUtils.sleep(350);
                 exec(d5_2);
-                SystemUtils.sleep(350);
-                //exec(d8_2_2);
-                //SystemUtils.sleep(200);
-                //exec(d8_2);
-                //SystemUtils.sleep(200);
+                exec(d8_2_2);
+                exec(d8_2);
                 turnOff(d2_E);
+                SystemUtils.sleep(500);
             }
         } catch (Exception ex) {
 
         }
+
+
     }
 
     public static void turnOff(String[][] values) {
@@ -469,6 +497,16 @@ public class SystemUtils {
         });
     }
 
+    private static void startSolidGreenProgressForLED() {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
+            @Override
+            public void run() {
+                SystemUtils.turnOffLights();
+                SystemUtils.execSolidGreenCircle();
+            }
+        });
+    }
+
     private static void turnOffGreenLights() {
         String emptyValue = "0";
         String[][] d2_E = {{"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d3/brightness"},
@@ -492,5 +530,47 @@ public class SystemUtils {
                 SystemUtils.execRedCircle();
             }
         });
+    }
+
+    public static void execSolidGreenCircle() {
+        try {
+            Log.d("TAG", "exec green ..");
+            String value = "255";
+            String[] d2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d1/brightness"};
+            String[] d5 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d4/brightness"};
+            String[] d8 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7/brightness"};
+            String[] d5_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d4_1/brightness"};
+            String[] d8_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7_1/brightness"};
+            String[] d2_1 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d1_1/brightness"};
+            String[] d5_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d4_2/brightness"};
+            String[] d8_2_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d1_2/brightness"};
+            String[] d8_2 = {"sh", "-c", "echo " + value + " > /sys/class/leds/d7_2/brightness"};
+
+            String emptyValue = "0";
+            String[][] d2_E = {{"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d1/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d4/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d7/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d4_1/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d7_1/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d1_1/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d4_2/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d1_2/brightness"},
+                    {"sh", "-c", "echo " + emptyValue + " > /sys/class/leds/d7_2/brightness"}};
+
+            while (STATE_TRANSACTION_COMPLETE == getSystemState()) {
+                exec(d2);
+                exec(d5);
+                exec(d8);
+                exec(d5_1);
+                exec(d8_1);
+                exec(d2_1);
+                exec(d5_2);
+                exec(d8_2_2);
+                exec(d8_2);
+            }
+            turnOff(d2_E);
+        } catch (Exception ex) {
+
+        }
     }
 }

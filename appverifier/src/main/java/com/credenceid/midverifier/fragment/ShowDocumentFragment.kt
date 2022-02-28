@@ -115,7 +115,7 @@ class ShowDocumentFragment : Fragment() {
                 TransferStatus.RESPONSE -> {
                     Log.d(LOG_TAG, "Device response received.")
                     //----Set LED state
-                    SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TRANSFER)
+                    SystemUtils.setSystemState(SystemUtils.STATE_TRANSACTION_COMPLETE)
                     registerResponseOnServer()
                 }
                 TransferStatus.DISCONNECTED -> {
