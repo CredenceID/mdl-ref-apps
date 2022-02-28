@@ -47,7 +47,7 @@ public class SystemUtils {
                 //startRedLights();
                 break;
             case STATE_BOOT_COMPLETED:
-                startBootCompleteBlueLED();
+                startLEDOnBoot();
                 break;
 
         }
@@ -503,6 +503,16 @@ public class SystemUtils {
             public void run() {
                 SystemUtils.turnOffLights();
                 SystemUtils.execSolidGreenCircle();
+            }
+        });
+    }
+
+    private static void startLEDOnBoot() {
+        DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(new Runnable() {
+            @Override
+            public void run() {
+                SystemUtils.turnOffLights();
+                SystemUtils.startBootCompleteBlueLED();
             }
         });
     }
