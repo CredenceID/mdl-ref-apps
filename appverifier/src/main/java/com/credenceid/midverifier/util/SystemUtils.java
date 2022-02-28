@@ -33,15 +33,15 @@ public class SystemUtils {
         switch (systemState) {
             case STATE_WAITING_FOR_TAP:
                 Log.d("TAG", "stating BLUE LEDs");
-                startCircularBlueLED();
+                //startCircularBlueLED();
                 break;
             case STATE_WAITING_FOR_EXCHANGE:
                 Log.d("TAG", "stating RED LEDs");
-                startRedLights();
+                //startRedLights();
                 break;
             case STATE_WAITING_FOR_TRANSFER:
                 Log.d("TAG", "stating GREEN LEDs");
-                startGreenProgressForLED();
+                //startGreenProgressForLED();
                 break;
 
         }

@@ -73,6 +73,7 @@ class TransferFragment : Fragment() {
                 requireContext(), "Error starting connection: ${e.message}",
                 Toast.LENGTH_SHORT
             ).show()
+            findNavController().navigate(R.id.action_Transfer_to_RequestOptions)
         }
 
         vm.getTransferStatus().observe(viewLifecycleOwner, {

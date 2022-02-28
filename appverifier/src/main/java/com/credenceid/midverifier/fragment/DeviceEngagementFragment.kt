@@ -95,21 +95,21 @@ class DeviceEngagementFragment : Fragment() {
         binding.csScanner.setOnClickListener { mCodeScanner?.startPreview() }*/
 
         binding.button.setOnClickListener {
-            SystemUtils.setSystemState(SystemUtils.EMPTY_STATE)
+           /* SystemUtils.setSystemState(SystemUtils.EMPTY_STATE)
             DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
                 Runnable {
                     SystemUtils.turnOffLights()
                 }
-            )
+            )*/
         }
 
         binding.button2.setOnClickListener {
-            SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
+            /*SystemUtils.setSystemState(SystemUtils.STATE_WAITING_FOR_TAP)
             DefaultExecutorSupplier.getInstance().forBackgroundTasks().execute(
                 Runnable {
                     SystemUtils.execBlueCircle()
                 }
-            )
+            )*/
         }
 
         transferManager.getTransferStatus().observe(viewLifecycleOwner, {
