@@ -7,7 +7,7 @@
     tools:context="com.credenceid.midverifier.fragment.DeviceEngagementFragment">
 
 
-    <com.budiyev.android.codescanner.CodeScannerView
+    <!--<com.budiyev.android.codescanner.CodeScannerView
         android:id="@+id/cs_scanner"
         android:layout_width="300dp"
         android:layout_height="300dp"
@@ -26,7 +26,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:maskColor="#77000000" />
+        app:maskColor="#77000000" />-->
 
     <Button
         android:id="@+id/bt_cancel"
@@ -36,7 +36,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cs_scanner" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/button"

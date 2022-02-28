@@ -18,8 +18,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.budiyev.android.codescanner.CodeScanner
-import com.budiyev.android.codescanner.DecodeCallback
 import com.credenceid.midverifier.R
 import com.credenceid.midverifier.databinding.FragmentDeviceEngagementBinding
 import com.credenceid.midverifier.transfer.TransferManager
@@ -41,7 +39,6 @@ class DeviceEngagementFragment : Fragment() {
 
     private val appPermissions:List<String> get() {
         var permissions = mutableListOf(
-            Manifest.permission.CAMERA,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
@@ -61,7 +58,7 @@ class DeviceEngagementFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private var mCodeScanner: CodeScanner? = null
+    //private var mCodeScanner: CodeScanner? = null
     private lateinit var transferManager: TransferManager
 
     override fun onCreateView(
@@ -86,8 +83,8 @@ class DeviceEngagementFragment : Fragment() {
                 }
             })
         // QR Code Engagement
-        mCodeScanner = CodeScanner(requireContext(), binding.csScanner)
-        mCodeScanner?.decodeCallback = DecodeCallback { result ->
+        //mCodeScanner = CodeScanner(requireContext(), binding.csScanner)
+        /*mCodeScanner?.decodeCallback = DecodeCallback { result ->
             requireActivity().runOnUiThread {
                 val qrText = result.text
                 Log.d(LOG_TAG, "qrText: $qrText")
@@ -95,7 +92,7 @@ class DeviceEngagementFragment : Fragment() {
             }
         }
 
-        binding.csScanner.setOnClickListener { mCodeScanner?.startPreview() }
+        binding.csScanner.setOnClickListener { mCodeScanner?.startPreview() }*/
 
         binding.button.setOnClickListener {
             SystemUtils.setSystemState(SystemUtils.EMPTY_STATE)
@@ -177,11 +174,12 @@ class DeviceEngagementFragment : Fragment() {
     }
 
     private fun enableReader() {
-        if (isAllPermissionsGranted()) {
+        /*if (isAllPermissionsGranted()) {
             mCodeScanner?.startPreview()
         } else {
             shouldRequestPermission()
-        }
+        }*/
+        shouldRequestPermission()
         transferManager.setNdefDeviceEngagement(
             NfcAdapter.getDefaultAdapter(requireContext()),
             requireActivity()
@@ -189,7 +187,7 @@ class DeviceEngagementFragment : Fragment() {
     }
 
     private fun disableReader() {
-        mCodeScanner?.releaseResources()
+        //mCodeScanner?.releaseResources()
     }
 
     private fun shouldRequestPermission() {
