@@ -18,6 +18,8 @@ package com.android.identity;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import android.util.Log;
+
 import androidx.core.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -211,7 +213,9 @@ final class SessionEncryptionDevice {
             iv.putInt(4, 0x00000000);
             iv.putInt(8, mSKReaderCounter);
             try {
+
                 final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                Log.i(TAG, "De-cipher messageCiphertext with AES/GCM/NoPadding");
                 cipher.init(Cipher.DECRYPT_MODE, mSKReader, new GCMParameterSpec(128,
                         iv.array()));
                 plainText = cipher.doFinal(messageCiphertext);
@@ -221,6 +225,8 @@ final class SessionEncryptionDevice {
                     | InvalidKeyException
                     | NoSuchAlgorithmException
                     | NoSuchPaddingException e) {
+
+                Log.i(TAG, "ERROR in De-cipher : " + e.toString());
                 return null;
             }
             mSKReaderCounter += 1;

@@ -55,7 +55,8 @@ class DataTransportNfc extends DataTransport implements NfcApduRouter.Listener {
     boolean mListenerStillActive;
     ByteArrayOutputStream mIncomingMessage = new ByteArrayOutputStream();
     int numChunksReceived = 0;
-    private NfcApduRouter mNfcApduRouter;
+    private NfcApduRouter mNfcApduRouter = null;
+    private Executor mExecutor;
 
     public DataTransportNfc(@NonNull Context context,
                             @Role int role,
@@ -166,9 +167,11 @@ class DataTransportNfc extends DataTransport implements NfcApduRouter.Listener {
     }
 
     public void setNfcApduRouter(NfcApduRouter nfcApduRouter, Executor executor) {
-        mNfcApduRouter = nfcApduRouter;
-        mNfcApduRouter.addListener(this, executor);
+        Logger.d(TAG, "setNfcApduRouter "+ nfcApduRouter.toString() + executor.toString());
 
+        mNfcApduRouter = nfcApduRouter;
+        mExecutor = executor;
+        mNfcApduRouter.addListener(this, executor);
         reportConnected();
     }
 
@@ -180,6 +183,9 @@ class DataTransportNfc extends DataTransport implements NfcApduRouter.Listener {
                 Util.toHex(aid), Util.toHex(apdu)));
 
         switch (NfcUtil.nfcGetCommandType(apdu)) {
+            case NfcUtil.COMMAND_TYPE_SELECT_BY_AID:
+                ret = handleSelectByAid(apdu);
+                break;
             case NfcUtil.COMMAND_TYPE_ENVELOPE:
                 ret = handleEnvelope(apdu);
                 break;
@@ -244,6 +250,31 @@ class DataTransportNfc extends DataTransport implements NfcApduRouter.Listener {
         }
 
         reportMessageProgress(mListenerRemainingChunks.size(), mListenerTotalChunks);
+    }
+
+
+    private @NonNull
+    byte[] handleSelectByAid(@NonNull byte[] apdu) {
+        Logger.d(TAG, "in handleSelectByAid");
+        if (apdu.length < 12) {
+            return NfcUtil.STATUS_WORD_FILE_NOT_FOUND;
+        }
+        if (Arrays.equals(Arrays.copyOfRange(apdu, 5, 12), NfcApduRouter.AID_FOR_TYPE_4_TAG_NDEF_APPLICATION)) {
+            Logger.d(TAG, "NFC engagement AID selected");
+            mNfcApduRouter.removeListener(this, mExecutor);
+            return NfcUtil.STATUS_WORD_OK;
+        } else if (Arrays.equals(Arrays.copyOfRange(apdu, 5, 12), NfcApduRouter.AID_FOR_MDL_DATA_TRANSFER)) {
+            if(null!=mNfcApduRouter){
+                reportConnected();
+            } else {
+                setNfcApduRouter(mNfcApduRouter, mExecutor);
+            }
+            return NfcUtil.STATUS_WORD_OK;
+
+        } else {
+            Logger.d(TAG, "Unexpected AID selected in APDU " + Util.toHex(apdu));
+            return NfcUtil.STATUS_WORD_FILE_NOT_FOUND;
+        }
     }
 
 

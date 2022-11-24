@@ -170,6 +170,8 @@ class TransferManager private constructor(private val context: Context) {
     }
 
     fun nfcProcessCommandApdu(service: HostApduService, aid: ByteArray, commandApdu: ByteArray) {
+        Log.d(LOG_TAG, "nfcProcessCommandApdu - aid = " + FormatUtil.encodeToString(aid))
+        Log.d(LOG_TAG, "nfcProcessCommandApdu - commandApdu = " + FormatUtil.encodeToString(commandApdu))
         hostApduService = service
         nfcApduRouter.addReceivedApdu(aid, commandApdu)
     }
@@ -319,5 +321,9 @@ class TransferManager private constructor(private val context: Context) {
 
     fun setResponseServed() {
         transferStatusLd.value = TransferStatus.REQUEST_SERVED
+    }
+
+    fun getNfcApduRouter(): NfcApduRouter{
+        return nfcApduRouter
     }
 }

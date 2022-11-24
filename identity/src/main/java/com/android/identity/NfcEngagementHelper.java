@@ -36,6 +36,7 @@ public class NfcEngagementHelper implements NfcApduRouter.Listener {
     private final Context mContext;
     private final KeyPair mEphemeralKeyPair;
     private final NfcApduRouter mNfcApduRouter;
+    private final NfcApduRouter mNfcDataTransferApduRouter;
     private final List<ConnectionMethod> mConnectionMethods;
     private final DataTransportOptions mOptions;
     private Listener mListener;
@@ -70,16 +71,18 @@ public class NfcEngagementHelper implements NfcApduRouter.Listener {
                                @NonNull PresentationSession presentationSession,
                                @NonNull List<ConnectionMethod> connectionMethods,
                                @NonNull DataTransportOptions options,
-                               @Nullable NfcApduRouter nfcApduRouter,
+                               @Nullable NfcApduRouter nfcEngagementApduRouter,
+                               @Nullable NfcApduRouter nfcDataTransferApduRouter,
                                @NonNull Listener listener, @NonNull Executor executor) {
         mContext = context;
         mPresentationSession = presentationSession;
         mListener = listener;
         mExecutor = executor;
-        mNfcApduRouter = nfcApduRouter;
+        mNfcApduRouter = nfcEngagementApduRouter;
         if (mNfcApduRouter != null) {
             mNfcApduRouter.addListener(this, executor);
         }
+        mNfcDataTransferApduRouter = nfcDataTransferApduRouter;
         mEphemeralKeyPair = mPresentationSession.getEphemeralKeyPair();
         mConnectionMethods = connectionMethods;
         mOptions = options;
@@ -128,6 +131,10 @@ public class NfcEngagementHelper implements NfcApduRouter.Listener {
         List<ConnectionMethod> disambiguatedMethods = ConnectionMethod.disambiguate(mConnectionMethods);
         for (ConnectionMethod cm : disambiguatedMethods) {
             DataTransport transport = cm.createDataTransport(mContext, DataTransport.ROLE_MDOC, mOptions);
+            if (transport instanceof DataTransportNfc) {
+                DataTransportNfc dataTransportNfc = (DataTransportNfc) transport;
+                dataTransportNfc.setNfcApduRouter(mNfcDataTransferApduRouter, mExecutor);
+            }
             transport.setEDeviceKeyBytes(encodedEDeviceKeyBytes);
             mTransports.add(transport);
             Logger.d(TAG, "Added transport for " + cm);

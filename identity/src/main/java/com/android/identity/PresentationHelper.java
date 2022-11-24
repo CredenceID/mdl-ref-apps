@@ -252,6 +252,8 @@ public class PresentationHelper {
         }
         mEReaderKey = Util.coseKeyDecode(Util.cborDecode(encodedEReaderKey));
 
+        Logger.d(TAG, "mEReaderKey = " + mEReaderKey.toString());
+
         mEncodedSessionTranscript = Util.cborEncode(new CborBuilder()
                 .addArray()
                 .add(Util.cborBuildTaggedByteString(mDeviceEngagement))

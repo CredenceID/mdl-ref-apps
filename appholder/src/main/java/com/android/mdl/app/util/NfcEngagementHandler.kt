@@ -18,6 +18,7 @@ package com.android.mdl.app.util
 
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
+import android.util.Log
 import androidx.navigation.NavDeepLinkBuilder
 import com.android.identity.DataTransport
 import com.android.identity.NfcApduRouter
@@ -120,12 +121,14 @@ class NfcEngagementHandler : HostApduService() {
             connectionSetup.getConnectionMethods(),
             connectionSetup.getConnectionOptions(),
             nfcApduRouter,
+            transferManager.getNfcApduRouter(),
             nfcEngagementListener,
             applicationContext.mainExecutor()
         )
     }
 
     override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray? {
+        log("processCommandApdu: aid-> ${FormatUtil.encodeToString(AID_FOR_TYPE_4_TAG_NDEF_APPLICATION)}")
         log("processCommandApdu: Command-> ${FormatUtil.encodeToString(commandApdu)}")
         nfcApduRouter.addReceivedApdu(AID_FOR_TYPE_4_TAG_NDEF_APPLICATION, commandApdu)
         return null
