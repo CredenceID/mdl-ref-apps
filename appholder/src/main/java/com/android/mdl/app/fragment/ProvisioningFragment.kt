@@ -8,9 +8,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.security.identity.CipherSuiteNotSupportedException
-import androidx.security.identity.PersonalizationData
-import androidx.security.identity.WritableIdentityCredential
+import com.android.identity.CipherSuiteNotSupportedException
+import com.android.identity.PersonalizationData
+import com.android.identity.WritableIdentityCredential
 import com.android.mdl.app.databinding.FragmentProvisioningBinding
 import com.android.mdl.app.document.Document
 import com.android.mdl.app.document.DocumentManager
@@ -114,7 +114,7 @@ class ProvisioningFragment : Fragment() {
                 )
                 mDocType = docType
                 try {
-                    wc = documentManager.createCredential(credentialName, docType)
+                    wc = documentManager.createCredential(document, credentialName, docType)
                     val certificateChain =
                         wc?.getCredentialKeyCertificateChain(challenge)
                     Log.d(LOG_TAG, "sendMessageSetCertificateChain")

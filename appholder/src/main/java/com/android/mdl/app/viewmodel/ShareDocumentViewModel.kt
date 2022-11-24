@@ -5,15 +5,11 @@ import android.view.View
 import androidx.databinding.ObservableField
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import com.android.identity.OriginInfo
 import com.android.mdl.app.transfer.TransferManager
 import com.android.mdl.app.util.TransferStatus
 
-class ShareDocumentViewModel(val app: Application) :
-    AndroidViewModel(app) {
-
-    companion object {
-        private const val LOG_TAG = "ShareDocumentViewModel"
-    }
+class ShareDocumentViewModel(val app: Application) : AndroidViewModel(app) {
 
     private val transferManager = TransferManager.getInstance(app.applicationContext)
     var deviceEngagementQr = ObservableField<View>()
@@ -22,10 +18,12 @@ class ShareDocumentViewModel(val app: Application) :
 
     fun getTransferStatus(): LiveData<TransferStatus> = transferManager.getTransferStatus()
 
-    fun startPresentation() {
-        // No need to call more than once
+    fun startPresentationReverseEngagement(
+        reverseEngagementUri: String,
+        originInfos: List<OriginInfo>
+    ) {
         if (!hasStarted) {
-            transferManager.startPresentation()
+            transferManager.startPresentationReverseEngagement(reverseEngagementUri, originInfos)
             hasStarted = true
         }
     }
@@ -39,9 +37,11 @@ class ShareDocumentViewModel(val app: Application) :
         message.set("Presentation canceled")
     }
 
-    fun setDeviceEngagement() {
+    fun showQrCode() {
         deviceEngagementQr.set(transferManager.getDeviceEngagementQrCode())
     }
 
+    fun triggerQrEngagement() {
+        transferManager.startQrEngagement()
+    }
 }
-

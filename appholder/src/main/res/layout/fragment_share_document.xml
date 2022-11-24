@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
@@ -25,9 +24,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
+            android:gravity="center"
             android:text="@{vm.message}"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Scan QR with mdoc verifier device" />
 
         <LinearLayout
             android:id="@+id/layout_engagement"
@@ -38,7 +39,7 @@
             app:layout_constraintBottom_toTopOf="@+id/bt_cancel"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/txt_share_fragment" />
+            app:layout_constraintTop_toBottomOf="@+id/txt_share_fragment"/>
 
         <Button
             android:id="@+id/bt_cancel"
@@ -47,10 +48,10 @@
             android:layout_marginTop="24dp"
             android:onClick="@{() -> fragment.onCancel()}"
             android:text="@string/bt_cancel"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/layout_engagement"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintTop_toBottomOf="@+id/layout_engagement" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

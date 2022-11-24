@@ -2,12 +2,15 @@ package com.android.mdl.app.util
 
 import android.content.Context
 import androidx.preference.PreferenceManager
-import androidx.security.identity.Constants
+import com.android.identity.Constants
+import java.io.File
 
 object PreferencesHelper {
     const val HARDWARE_BACKED_PREFERENCE = "com.android.mdl.app.HARDWARE_BACKED"
     const val BLE_DATA_RETRIEVAL = "ble_transport"
     const val BLE_DATA_RETRIEVAL_PERIPHERAL_MODE = "ble_transport_peripheral_mode"
+    const val BLE_DATA_L2CAP = "ble_l2cap"
+    const val BLE_CLEAR_CACHE = "ble_clear_cache"
     const val WIFI_DATA_RETRIEVAL = "wifi_transport"
     const val NFC_DATA_RETRIEVAL = "nfc_transport"
     private const val LOG_INFO = "log_info"
@@ -39,6 +42,13 @@ object PreferencesHelper {
         )
     }
 
+    fun getKeystoreBackedStorageLocation(context: Context): File {
+        // As per the docs, the credential data contains reference to Keystore aliases so ensure
+        // this is stored in a location where it's not automatically backed up and restored by
+        // Android Backup as per https://developer.android.com/guide/topics/data/autobackup
+        return context.noBackupFilesDir
+    }
+
     // Default value for BLE data retrieval is true
     fun isBleDataRetrievalEnabled(context: Context): Boolean {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
@@ -48,7 +58,19 @@ object PreferencesHelper {
 
     fun isBleDataRetrievalPeripheralModeEnabled(context: Context): Boolean {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
-            BLE_DATA_RETRIEVAL_PERIPHERAL_MODE, true
+            BLE_DATA_RETRIEVAL_PERIPHERAL_MODE, false
+        )
+    }
+
+    fun isBleL2capEnabled(context: Context): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
+            BLE_DATA_L2CAP, false
+        )
+    }
+
+    fun isBleClearCacheEnabled(context: Context): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
+            BLE_CLEAR_CACHE, false
         )
     }
 
@@ -62,34 +84,6 @@ object PreferencesHelper {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
             NFC_DATA_RETRIEVAL, false
         )
-    }
-
-    fun getLoggingFlags(context: Context): Int {
-        var flags = 0
-        if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(LOG_INFO, false)) {
-            flags += Constants.LOGGING_FLAG_INFO
-        }
-        if (PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(LOG_DEVICE_ENGAGEMENT, false)
-        ) {
-            flags += Constants.LOGGING_FLAG_DEVICE_ENGAGEMENT
-        }
-        if (PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(LOG_SESSION_MESSAGES, false)
-        ) {
-            flags += Constants.LOGGING_FLAG_SESSION_MESSAGES
-        }
-        if (PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(LOG_TRANSPORT, false)
-        ) {
-            flags += Constants.LOGGING_FLAG_TRANSPORT_SPECIFIC
-        }
-        if (PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(LOG_TRANSPORT_VERBOSE, false)
-        ) {
-            flags += Constants.LOGGING_FLAG_TRANSPORT_SPECIFIC_VERBOSE
-        }
-        return flags
     }
 
     fun isReaderAuthenticationEnabled(context: Context): Boolean {

@@ -44,10 +44,7 @@ class RequestOptionsFragment : Fragment() {
 
         if (!keepConnection) {
             // Always call to cancel any connection that could be on progress
-            TransferManager.getInstance(requireContext()).stopVerification(
-                sendSessionTerminationMessage = true,
-                useTransportSpecificSessionTermination = true
-            )
+            TransferManager.getInstance(requireContext()).disconnect()
         }
 
         binding.cbRequestMdl.setOnClickListener {
@@ -55,6 +52,7 @@ class RequestOptionsFragment : Fragment() {
             binding.cbRequestMdlOlder21.isEnabled = binding.cbRequestMdl.isChecked
             binding.cbRequestMdlMandatory.isEnabled = binding.cbRequestMdl.isChecked
             binding.cbRequestMdlFull.isEnabled = binding.cbRequestMdl.isChecked
+            binding.cbRequestMdlUsTransportation.isEnabled =  binding.cbRequestMdl.isChecked
             binding.cbRequestMdlCustom.isEnabled = binding.cbRequestMdl.isChecked
         }
 
@@ -63,6 +61,7 @@ class RequestOptionsFragment : Fragment() {
             binding.cbRequestMdlOlder21.isChecked = false
             binding.cbRequestMdlMandatory.isChecked = false
             binding.cbRequestMdlFull.isChecked = false
+            binding.cbRequestMdlUsTransportation.isChecked = false
             binding.cbRequestMdlCustom.isChecked = false
         }
         binding.cbRequestMdlOlder21.setOnClickListener {
@@ -70,6 +69,7 @@ class RequestOptionsFragment : Fragment() {
             binding.cbRequestMdlOlder21.isChecked = true
             binding.cbRequestMdlMandatory.isChecked = false
             binding.cbRequestMdlFull.isChecked = false
+            binding.cbRequestMdlUsTransportation.isChecked = false
             binding.cbRequestMdlCustom.isChecked = false
         }
         binding.cbRequestMdlMandatory.setOnClickListener {
@@ -77,6 +77,7 @@ class RequestOptionsFragment : Fragment() {
             binding.cbRequestMdlOlder21.isChecked = false
             binding.cbRequestMdlMandatory.isChecked = true
             binding.cbRequestMdlFull.isChecked = false
+            binding.cbRequestMdlUsTransportation.isChecked = false
             binding.cbRequestMdlCustom.isChecked = false
         }
         binding.cbRequestMdlFull.setOnClickListener {
@@ -84,24 +85,71 @@ class RequestOptionsFragment : Fragment() {
             binding.cbRequestMdlOlder21.isChecked = false
             binding.cbRequestMdlMandatory.isChecked = false
             binding.cbRequestMdlFull.isChecked = true
+            binding.cbRequestMdlUsTransportation.isChecked = false
             binding.cbRequestMdlCustom.isChecked = false
-
+        }
+        binding.cbRequestMdlUsTransportation.setOnClickListener {
+            binding.cbRequestMdlOlder18.isChecked = false
+            binding.cbRequestMdlOlder21.isChecked = false
+            binding.cbRequestMdlMandatory.isChecked = false
+            binding.cbRequestMdlFull.isChecked = false
+            binding.cbRequestMdlUsTransportation.isChecked = true
+            binding.cbRequestMdlCustom.isChecked = false
         }
         binding.cbRequestMdlCustom.setOnClickListener {
             binding.cbRequestMdlOlder18.isChecked = false
             binding.cbRequestMdlOlder21.isChecked = false
             binding.cbRequestMdlMandatory.isChecked = false
             binding.cbRequestMdlFull.isChecked = false
+            binding.cbRequestMdlUsTransportation.isChecked = false
             binding.cbRequestMdlCustom.isChecked = true
         }
 
-        // TODO: get intent to retain from user
-        val intentToRetain = false
-        val requestDocumentList = RequestDocumentList()
+        binding.btShowQr.setOnClickListener {
+            findNavController().navigate(
+                RequestOptionsFragmentDirections.actionRequestOptionsToShowQr(calcRequestDocumentList())
+            )
+        }
 
         binding.btNext.setOnClickListener {
 
-            if (binding.cbRequestMdl.isChecked) {
+            if (binding.cbRequestMdl.isChecked && binding.cbRequestMdlCustom.isChecked) {
+                findNavController().navigate(
+                    RequestOptionsFragmentDirections.actionRequestOptionsToRequestCustom(
+                        RequestMdl,
+                        calcRequestDocumentList(),
+                        keepConnection
+                    )
+                )
+            } else {
+                //Navigate direct to transfer screnn
+                if (keepConnection) {
+                    findNavController().navigate(
+                        RequestOptionsFragmentDirections.actionRequestOptionsToTransfer(
+                            calcRequestDocumentList(),
+                            true
+                        )
+                    )
+                } else {
+                    findNavController().navigate(
+                        RequestOptionsFragmentDirections.actionRequestOptionsToScanDeviceEngagement(
+                            calcRequestDocumentList()
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun calcRequestDocumentList() : RequestDocumentList {
+        // TODO: get intent to retain from user
+        val intentToRetain = false
+
+        val requestDocumentList = RequestDocumentList()
+        if (binding.cbRequestMdl.isChecked) {
+            if (binding.cbRequestMdlUsTransportation.isChecked) {
+                requestDocumentList.addRequestDocument(RequestMdlUsTransportation)
+            } else {
                 val mdl = RequestMdl
                 when {
                     binding.cbRequestMdlOlder18.isChecked ->
@@ -115,55 +163,31 @@ class RequestOptionsFragment : Fragment() {
                 }
                 requestDocumentList.addRequestDocument(mdl)
             }
-            if (binding.cbRequestMvr.isChecked) {
-                val doc = RequestMvr
-                doc.setSelectedDataItems(getSelectRequestFull(doc, intentToRetain))
-                requestDocumentList.addRequestDocument(doc)
-            }
-            if (binding.cbRequestMicov.isChecked) {
-                val doc = RequestMicovAtt
-                doc.setSelectedDataItems(getSelectRequestFull(doc, intentToRetain))
-                requestDocumentList.addRequestDocument(doc)
-                val doc2 = RequestMicovVtr
-                doc2.setSelectedDataItems(getSelectRequestFull(doc2, intentToRetain))
-                requestDocumentList.addRequestDocument(doc2)
-            }
-            if (binding.cbRequestMulti003.isChecked) {
-                val doc = RequestMdl
-                val selectMdl = mapOf(Pair("portrait", false), Pair("document_number", false))
-                doc.setSelectedDataItems(selectMdl)
-                requestDocumentList.addRequestDocument(doc)
-                val doc2 = RequestMulti003()
-                requestDocumentList.addRequestDocument(doc2)
-            }
-
-            if (binding.cbRequestMdl.isChecked && binding.cbRequestMdlCustom.isChecked) {
-                findNavController().navigate(
-                    RequestOptionsFragmentDirections.actionRequestOptionsToRequestCustom(
-                        RequestMdl,
-                        requestDocumentList,
-                        keepConnection
-                    )
-                )
-            } else {
-                //Navigate direct to transfer screnn
-                if (keepConnection) {
-                    findNavController().navigate(
-                        RequestOptionsFragmentDirections.actionRequestOptionsToTransfer(
-                            requestDocumentList,
-                            true
-                        )
-                    )
-                } else {
-                    findNavController().navigate(
-                        RequestOptionsFragmentDirections.actionRequestOptionsToScanDeviceEngagement(
-                            requestDocumentList
-                        )
-                    )
-                }
-            }
         }
+        if (binding.cbRequestMvr.isChecked) {
+            val doc = RequestMvr
+            doc.setSelectedDataItems(getSelectRequestFull(doc, intentToRetain))
+            requestDocumentList.addRequestDocument(doc)
+        }
+        if (binding.cbRequestMicov.isChecked) {
+            val doc = RequestMicovAtt
+            doc.setSelectedDataItems(getSelectRequestFull(doc, intentToRetain))
+            requestDocumentList.addRequestDocument(doc)
+            val doc2 = RequestMicovVtr
+            doc2.setSelectedDataItems(getSelectRequestFull(doc2, intentToRetain))
+            requestDocumentList.addRequestDocument(doc2)
+        }
+        if (binding.cbRequestMulti003.isChecked) {
+            val doc = RequestMdl
+            val selectMdl = mapOf(Pair("portrait", false), Pair("document_number", false))
+            doc.setSelectedDataItems(selectMdl)
+            requestDocumentList.addRequestDocument(doc)
+            val doc2 = RequestMulti003()
+            requestDocumentList.addRequestDocument(doc2)
+        }
+        return requestDocumentList
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.

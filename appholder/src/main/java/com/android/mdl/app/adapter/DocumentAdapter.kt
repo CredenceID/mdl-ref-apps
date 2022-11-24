@@ -19,6 +19,7 @@ package com.android.mdl.app.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.DrawableRes
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -26,7 +27,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.android.mdl.app.R
 import com.android.mdl.app.databinding.ListItemDocumentBinding
 import com.android.mdl.app.document.Document
-import com.android.mdl.app.fragment.SelectDocumentFragmentDirections
+import com.android.mdl.app.wallet.SelectDocumentFragmentDirections
 
 /**
  * Adapter for the [RecyclerView].
@@ -58,24 +59,28 @@ class DocumentAdapter :
             }
         }
 
-        private fun navigateToDetail(
-            document: Document,
-            view: View
-        ) {
-            val direction =
-                SelectDocumentFragmentDirections.actionSelectDocumentFragmentToDocumentDetailFragment(
-                    document
-                )
-
-            if (view.findNavController().currentDestination?.id == R.id.selectDocumentFragment) {
+        private fun navigateToDetail(document: Document, view: View) {
+            val direction = SelectDocumentFragmentDirections.toDocumentDetail(document)
+            if (view.findNavController().currentDestination?.id == R.id.wallet) {
                 view.findNavController().navigate(direction)
             }
         }
 
         fun bind(item: Document) {
             binding.apply {
+                val cardArt = cardArtFor(item.cardArt)
+                binding.llItemContainer.setBackgroundResource(cardArt)
                 document = item
                 executePendingBindings()
+            }
+        }
+
+        @DrawableRes
+        private fun cardArtFor(cardArt: Int): Int {
+            return when(cardArt) {
+                1 -> R.drawable.yellow_gradient
+                2 -> R.drawable.blue_gradient
+                else -> R.drawable.green_gradient
             }
         }
     }

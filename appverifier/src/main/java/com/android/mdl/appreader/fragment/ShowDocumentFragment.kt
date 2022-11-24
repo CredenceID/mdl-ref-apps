@@ -1,17 +1,23 @@
 package com.android.mdl.appreader.fragment
 
+import android.content.res.Resources
 import android.graphics.BitmapFactory
+import android.icu.text.SimpleDateFormat
+import android.icu.util.GregorianCalendar
+import android.icu.util.TimeZone
 import android.os.Bundle
 import android.text.Html
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.AttrRes
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.security.identity.DeviceResponseParser
+import com.android.identity.DeviceResponseParser
 import com.android.mdl.appreader.R
 import com.android.mdl.appreader.databinding.FragmentShowDocumentBinding
 import com.android.mdl.appreader.issuerauth.SimpleIssuerTrustStore
@@ -19,8 +25,7 @@ import com.android.mdl.appreader.transfer.TransferManager
 import com.android.mdl.appreader.util.FormatUtil
 import com.android.mdl.appreader.util.KeysAndCertificates
 import com.android.mdl.appreader.util.TransferStatus
-import org.jetbrains.anko.attr
-
+import java.security.MessageDigest
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -41,6 +46,7 @@ class ShowDocumentFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
     private var portraitBytes: ByteArray? = null
+    private var signatureBytes: ByteArray? = null
     private lateinit var transferManager: TransferManager
 
     override fun onCreateView(
@@ -71,6 +77,13 @@ class ShowDocumentFragment : Fragment() {
             binding.ivPortrait.visibility = View.VISIBLE
         }
 
+        signatureBytes?.let { signature ->
+            Log.d(LOG_TAG, "Showing signature " + signature.size + " bytes")
+            binding.ivSignature.setImageBitmap(
+                BitmapFactory.decodeByteArray(signatureBytes, 0, signature.size)
+            )
+            binding.ivSignature.visibility = View.VISIBLE
+        }
 
         binding.btOk.setOnClickListener {
             findNavController().navigate(R.id.action_ShowDocument_to_RequestOptions)
@@ -101,38 +114,36 @@ class ShowDocumentFragment : Fragment() {
                 ShowDocumentFragmentDirections.actionShowDocumentToRequestOptions(true)
             )
         }
-        transferManager.getTransferStatus().observe(viewLifecycleOwner, {
+        transferManager.getTransferStatus().observe(viewLifecycleOwner) {
             when (it) {
                 TransferStatus.ENGAGED -> {
                     Log.d(LOG_TAG, "Device engagement received.")
                 }
+
                 TransferStatus.CONNECTED -> {
                     Log.d(LOG_TAG, "Device connected received.")
                 }
+
                 TransferStatus.RESPONSE -> {
                     Log.d(LOG_TAG, "Device response received.")
                 }
+
                 TransferStatus.DISCONNECTED -> {
                     Log.d(LOG_TAG, "Device disconnected received.")
-                    transferManager.stopVerification(
-                        sendSessionTerminationMessage = false,
-                        useTransportSpecificSessionTermination = false
-                    )
                     hideButtons()
                 }
+
                 TransferStatus.ERROR -> {
                     Toast.makeText(
                         requireContext(), "Error with the connection.",
                         Toast.LENGTH_SHORT
                     ).show()
-                    transferManager.stopVerification(
-                        sendSessionTerminationMessage = false,
-                        useTransportSpecificSessionTermination = false
-                    )
+                    transferManager.disconnect()
                     hideButtons()
                 }
+                else -> {}
             }
-        })
+        }
     }
 
     private fun hideButtons() {
@@ -151,7 +162,7 @@ class ShowDocumentFragment : Fragment() {
 
         val sb = StringBuffer()
         sb.append("Number of documents returned: <b>${documents.size}</b><br>")
-        sb.append("Address: <b>" + transferManager.mdocAddress + "</b><br>")
+        sb.append("Address: <b>" + transferManager.mdocConnectionMethod + "</b><br>")
         sb.append("<br>")
         for (doc in documents) {
             // Get primary color from theme to use in the HTML formatted document.
@@ -179,7 +190,40 @@ class ShowDocumentFragment : Fragment() {
             }
             sb.append("${getFormattedCheck(isDSTrusted)}Issuer’s DS Key Recognized: $commonName<br>")
             sb.append("${getFormattedCheck(doc.issuerSignedAuthenticated)}Issuer Signed Authenticated<br>")
-            sb.append("${getFormattedCheck(doc.deviceSignedAuthenticated)}Device Signed Authenticated<br>")
+            var macOrSignatureString = "MAC"
+            if (doc.deviceSignedAuthenticatedViaSignature)
+                macOrSignatureString = "ECDSA"
+            sb.append("${getFormattedCheck(doc.deviceSignedAuthenticated)}Device Signed Authenticated (${macOrSignatureString})<br>")
+
+            sb.append("<h6>MSO</h6>")
+
+            val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+            val calSigned = GregorianCalendar(TimeZone.getTimeZone("UTC"))
+            val calValidFrom = GregorianCalendar(TimeZone.getTimeZone("UTC"))
+            val calValidUntil = GregorianCalendar(TimeZone.getTimeZone("UTC"))
+            calSigned.timeInMillis = doc.validityInfoSigned.toEpochMilli()
+            calValidFrom.timeInMillis = doc.validityInfoValidFrom.toEpochMilli()
+            calValidUntil.timeInMillis = doc.validityInfoValidUntil.toEpochMilli()
+            sb.append("${getFormattedCheck(true)}Signed: ${df.format(calSigned)}<br>")
+            sb.append("${getFormattedCheck(true)}Valid From: ${df.format(calValidFrom)}<br>")
+            sb.append("${getFormattedCheck(true)}Valid Until: ${df.format(calValidUntil)}<br>")
+            if (doc.validityInfoExpectedUpdate != null) {
+                val calExpectedUpdate = GregorianCalendar(TimeZone.getTimeZone("UTC"))
+                calExpectedUpdate.timeInMillis = doc.validityInfoExpectedUpdate!!.toEpochMilli()
+                sb.append("${getFormattedCheck(true)}Expected Update: ${df.format(calExpectedUpdate)}<br>")
+            }
+            // TODO: show warning if MSO is valid for more than 30 days
+
+            // Just show the SHA-1 of DeviceKey since all we're interested in here is whether
+            // we saw the same key earlier.
+            sb.append("<h6>DeviceKey</h6>")
+            val deviceKeySha1 = FormatUtil.encodeToString(
+                MessageDigest.getInstance("SHA-1").digest(doc.deviceKey.encoded)
+            )
+            sb.append("${getFormattedCheck(true)}SHA-1: ${deviceKeySha1}<br>")
+            // TODO: log DeviceKey's that we've seen and show warning if a DeviceKey is seen
+            //  a second time. Also would want button in Settings page to clear the log.
+
             for (ns in doc.issuerNamespaces) {
                 sb.append("<br>")
                 sb.append("<h5>Namespace: $ns</h5>")
@@ -193,23 +237,28 @@ class ShowDocumentFragment : Fragment() {
                     } else if (doc.docType == MICOV_DOCTYPE && ns == MICOV_ATT_NAMESPACE && elem == "fac") {
                         valueStr = String.format("(%d bytes, shown above)", value.size)
                         portraitBytes = doc.getIssuerEntryByteString(ns, elem)
-                    } else if (doc.docType == MDL_DOCTYPE
-                        && ns == MDL_NAMESPACE && elem == "extra"
-                    ) {
+                    } else if (doc.docType == MDL_DOCTYPE && ns == MDL_NAMESPACE && elem == "extra") {
                         valueStr = String.format("%d bytes extra data", value.size)
+                    } else if (doc.docType == MDL_DOCTYPE && ns == MDL_NAMESPACE && elem == "signature_usual_mark") {
+                        valueStr = String.format("(%d bytes, shown below)", value.size)
+                        signatureBytes = doc.getIssuerEntryByteString(ns, elem)
                     } else {
                         valueStr = FormatUtil.cborPrettyPrint(value)
                     }
-                    sb.append(
-                        "${
-                            getFormattedCheck(doc.getIssuerEntryDigestMatch(ns, elem))
-                        }<b>$elem</b> -> $valueStr<br>"
-                    )
+                    sb.append("${getFormattedCheck(doc.getIssuerEntryDigestMatch(ns, elem))}<b>$elem</b> -> $valueStr<br>")
                 }
                 sb.append("</p><br>")
             }
         }
         return sb.toString()
+    }
+
+    private fun Resources.Theme.attr(@AttrRes attribute: Int): TypedValue {
+        val typedValue = TypedValue()
+        if (!resolveAttribute(attribute, typedValue, true)) {
+            throw IllegalArgumentException("Failed to resolve attribute: $attribute")
+        }
+        return typedValue
     }
 
     private fun getFormattedCheck(authenticated: Boolean) = if (authenticated) {
@@ -220,10 +269,7 @@ class ShowDocumentFragment : Fragment() {
 
     private var callback = object : OnBackPressedCallback(true /* enabled by default */) {
         override fun handleOnBackPressed() {
-            TransferManager.getInstance(requireContext()).stopVerification(
-                sendSessionTerminationMessage = true,
-                useTransportSpecificSessionTermination = true
-            )
+            TransferManager.getInstance(requireContext()).disconnect()
             findNavController().navigate(R.id.action_ShowDocument_to_RequestOptions)
         }
     }
