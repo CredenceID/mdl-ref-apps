@@ -167,8 +167,6 @@ class DataTransportNfc extends DataTransport implements NfcApduRouter.Listener {
     }
 
     public void setNfcApduRouter(NfcApduRouter nfcApduRouter, Executor executor) {
-        Logger.d(TAG, "setNfcApduRouter "+ nfcApduRouter.toString() + executor.toString());
-
         mNfcApduRouter = nfcApduRouter;
         mExecutor = executor;
         mNfcApduRouter.addListener(this, executor);

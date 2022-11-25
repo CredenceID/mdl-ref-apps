@@ -344,20 +344,7 @@ public class NfcEngagementHelper implements NfcApduRouter.Listener {
         if (Arrays.equals(Arrays.copyOfRange(apdu, 5, 12), NfcApduRouter.AID_FOR_TYPE_4_TAG_NDEF_APPLICATION)) {
             Logger.d(TAG, "NFC engagement AID selected");
             return NfcUtil.STATUS_WORD_OK;
-        } else if (Arrays.equals(Arrays.copyOfRange(apdu, 5, 12), NfcApduRouter.AID_FOR_MDL_DATA_TRANSFER)) {
-            for (DataTransport t : mTransports) {
-                if (t instanceof DataTransportNfc) {
-                    Logger.d(TAG, "NFC data transfer AID selected");
-                    DataTransportNfc dataTransportNfc = (DataTransportNfc) t;
-                    // Hand over the APDU router to the NFC data transport
-                    mNfcApduRouter.removeListener(this, mExecutor);
-                    dataTransportNfc.setNfcApduRouter(mNfcApduRouter, mExecutor);
-                    return NfcUtil.STATUS_WORD_OK;
-                }
-            }
-            Logger.d(TAG, "Rejecting NFC data transfer since it wasn't set up");
-            return NfcUtil.STATUS_WORD_FILE_NOT_FOUND;
-        } else {
+        }  else {
             Logger.d(TAG, "Unexpected AID selected in APDU " + Util.toHex(apdu));
             return NfcUtil.STATUS_WORD_FILE_NOT_FOUND;
         }
