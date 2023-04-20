@@ -1,7 +1,7 @@
 package com.android.mdl.app.fragment
 
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,19 +17,34 @@ import com.android.mdl.app.document.Document
 import com.android.mdl.app.document.KeysAndCertificates
 import com.android.mdl.app.readerauth.SimpleReaderTrustStore
 import com.android.mdl.app.transfer.TransferManager
+import com.android.mdl.app.util.PreferencesHelper
 import com.android.mdl.app.util.TransferStatus
+import com.android.mdl.app.util.log
 import com.android.mdl.app.viewmodel.TransferDocumentViewModel
 
 class TransferDocumentFragment : Fragment() {
 
     companion object {
-        private const val LOG_TAG = "TransferDocumentFragment"
+        const val CLOSE_AFTER_SERVING_KEY = "closeAfterServing"
     }
 
     private var _binding: FragmentTransferDocumentBinding? = null
     private val binding get() = _binding!!
 
     private val viewModel: TransferDocumentViewModel by activityViewModels()
+    private val closeAfterServing by lazy {
+        arguments?.getBoolean("closeAfterServing", false) ?: false
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        val backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                onDone()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,20 +53,16 @@ class TransferDocumentFragment : Fragment() {
         _binding = FragmentTransferDocumentBinding.inflate(inflater)
         binding.fragment = this
         binding.vm = viewModel
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            onBackPressedCallback
-        )
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         viewModel.getTransferStatus().observe(viewLifecycleOwner) { transferStatus ->
             when (transferStatus) {
-                TransferStatus.QR_ENGAGEMENT_READY -> Log.d(LOG_TAG, "Engagement Ready")
-                TransferStatus.CONNECTED -> Log.d(LOG_TAG, "Connected")
+                TransferStatus.QR_ENGAGEMENT_READY -> log("Engagement Ready")
+                TransferStatus.CONNECTED -> log("Connected")
                 TransferStatus.REQUEST -> onTransferRequested()
-                TransferStatus.REQUEST_SERVED -> Log.d(LOG_TAG, "Request Served")
+                TransferStatus.REQUEST_SERVED -> onRequestServed()
                 TransferStatus.DISCONNECTED -> onTransferDisconnected()
                 TransferStatus.ERROR -> onTransferError()
                 else -> {}
@@ -63,10 +74,27 @@ class TransferDocumentFragment : Fragment() {
                 useTransportSpecificSessionTermination = false
             )
         }
+        viewModel.authConfirmationState.observe(viewLifecycleOwner) { cancelled ->
+            if (cancelled == true) {
+                viewModel.onAuthenticationCancellationConsumed()
+                onDone()
+                findNavController().navigateUp()
+            }
+        }
+    }
+
+    private fun onRequestServed() {
+        log("Request Served")
+        if (PreferencesHelper.isConnectionAutoCloseEnabled()) {
+            onCloseConnection(
+                sendSessionTerminationMessage = true,
+                useTransportSpecificSessionTermination = false
+            )
+        }
     }
 
     private fun onTransferRequested() {
-        Log.d(LOG_TAG, "Request")
+        log("Request")
 
         try {
             val trustStore = SimpleReaderTrustStore(
@@ -130,7 +158,7 @@ class TransferDocumentFragment : Fragment() {
             }
         } catch (e: Exception) {
             val message = "On request received error: ${e.message}"
-            Log.e(LOG_TAG, message, e)
+            log(message, e)
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
             binding.txtConnectionStatus.append("\n$message")
         }
@@ -150,9 +178,12 @@ class TransferDocumentFragment : Fragment() {
     }
 
     private fun onTransferDisconnected() {
-        Log.d(LOG_TAG, "Disconnected")
+        log("Disconnected")
         hideButtons()
         TransferManager.getInstance(requireContext()).disconnect()
+        if (closeAfterServing) {
+            requireActivity().finish()
+        }
     }
 
     private fun onTransferError() {
@@ -167,12 +198,6 @@ class TransferDocumentFragment : Fragment() {
         binding.btCloseTerminationMessage.visibility = View.GONE
         binding.btCloseTransportSpecific.visibility = View.GONE
         binding.btOk.visibility = View.VISIBLE
-    }
-
-    private var onBackPressedCallback = object : OnBackPressedCallback(true) {
-        override fun handleOnBackPressed() {
-            onDone()
-        }
     }
 
     fun onCloseConnection(

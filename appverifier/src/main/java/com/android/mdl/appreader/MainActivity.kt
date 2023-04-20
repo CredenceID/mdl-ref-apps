@@ -10,6 +10,9 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
+import com.google.android.material.elevation.SurfaceColors
+import java.security.Security
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +26,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val color = SurfaceColors.SURFACE_2.getColor(this)
+        window.statusBarColor = color
+        window.navigationBarColor = color
         setContentView(R.layout.activity_main)
 
         val navController = findNavController(R.id.nav_host_fragment)
@@ -44,6 +50,8 @@ class MainActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         mPendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        Security.addProvider(BouncyCastleProvider())
     }
 
     override fun onResume() {

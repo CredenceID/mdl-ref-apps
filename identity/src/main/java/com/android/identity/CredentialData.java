@@ -116,6 +116,7 @@ class CredentialData {
 
     private int mAuthKeyCount = 0;
     private int mAuthMaxUsesPerKey = 1;
+    private long mAuthKeyMinValidTimeMillis = 0;
 
     // The alias for the key that must be unlocked by user auth for every reader session.
     //
@@ -189,7 +190,7 @@ class CredentialData {
             }
 
             DataItem cborValue = map.get(new UnicodeString("value"));
-            byte[] data = Util.cborEncodeWithoutCanonicalizing(cborValue);
+            byte[] data = Util.cborEncode(cborValue);
             builder.putEntry(namespaceName, name, accessControlProfileIds, data);
         }
 
@@ -697,7 +698,6 @@ class CredentialData {
         try {
             outputStream = file.startWrite();
             outputStream.write(dataToSaveBytes);
-            outputStream.close();
             file.finishWrite(outputStream);
         } catch (IOException e) {
             if (outputStream != null) {
@@ -785,7 +785,7 @@ class CredentialData {
                 | KeyStoreException e) {
             throw new RuntimeException("Error encrypting CBOR for saving to disk", e);
         }
-        return Util.cborEncodeWithoutCanonicalizing(builder.build().get(0));
+        return Util.cborEncode(builder.build().get(0));
     }
 
     private void saveToDiskAuthKeys(MapBuilder<CborBuilder> map) {
@@ -852,6 +852,7 @@ class CredentialData {
         map.put("proofOfProvisioningSha256", mProofOfProvisioningSha256);
         map.put("authKeyCount", mAuthKeyCount);
         map.put("authKeyMaxUses", mAuthMaxUsesPerKey);
+        map.put("authKeyMinValidTimeMillis", mAuthKeyMinValidTimeMillis);
     }
 
     private boolean loadFromDisk(String dataKeyAlias) {
@@ -1039,8 +1040,15 @@ class CredentialData {
 
         mAuthKeyCount = ((Number) map.get(
                 new UnicodeString("authKeyCount"))).getValue().intValue();
+
         mAuthMaxUsesPerKey = ((Number) map.get(
                 new UnicodeString("authKeyMaxUses"))).getValue().intValue();
+
+        mAuthKeyMinValidTimeMillis = 0;
+        if (Util.cborMapHasKey(map, "authKeyMinValidTimeMillis")) {
+            mAuthKeyMinValidTimeMillis = ((Number) map.get(
+                    new UnicodeString("authKeyMinValidTimeMillis"))).getValue().intValue();
+        }
 
         DataItem authKeyDatas = map.get(new UnicodeString("authKeyDatas"));
         if (!(authKeyDatas instanceof Array)) {
@@ -1173,6 +1181,10 @@ class CredentialData {
         return mAuthMaxUsesPerKey;
     }
 
+    long getAuthKeyMinValidTimeMillis() {
+        return mAuthKeyMinValidTimeMillis;
+    }
+
     int[] getAuthKeyUseCounts() {
         int[] result = new int[mAuthKeyCount];
         int n = 0;
@@ -1182,10 +1194,19 @@ class CredentialData {
         return result;
     }
 
-    void setAvailableAuthenticationKeys(int keyCount, int maxUsesPerKey) {
+    List<Calendar> getAuthKeyExpirations() {
+        List<Calendar> ret = new ArrayList<>();
+        for (AuthKeyData data : mAuthKeyDatas) {
+            ret.add(data.mExpirationDate);
+        }
+        return ret;
+    }
+
+    void setAvailableAuthenticationKeys(int keyCount, int maxUsesPerKey, long minValidTimeMillis) {
         int prevAuthKeyCount = mAuthKeyCount;
         mAuthKeyCount = keyCount;
         mAuthMaxUsesPerKey = maxUsesPerKey;
+        mAuthKeyMinValidTimeMillis = minValidTimeMillis;
 
         if (prevAuthKeyCount < mAuthKeyCount) {
             // Added non-zero number of auth keys...
@@ -1261,7 +1282,11 @@ class CredentialData {
             boolean keyExceededUseCount = (data.mUseCount >= mAuthMaxUsesPerKey);
             boolean keyBeyondExpirationDate = false;
             if (data.mExpirationDate != null) {
-                keyBeyondExpirationDate = now.after(data.mExpirationDate);
+                // Adjust expiration date for the minimum amount of time required in order
+                // for an auth key to be considered valid.
+                Calendar expirationDateAdjusted = (Calendar) data.mExpirationDate.clone();
+                expirationDateAdjusted.add(Calendar.MILLISECOND, (int) -mAuthKeyMinValidTimeMillis);
+                keyBeyondExpirationDate = now.after(expirationDateAdjusted);
             }
             boolean newKeyNeeded =
                     data.mAlias.isEmpty() || keyExceededUseCount || keyBeyondExpirationDate;
@@ -1285,12 +1310,15 @@ class CredentialData {
                             .setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA512);
 
                     boolean isStrongBoxBacked = false;
+                    /* Disable StrongBox usage for now, see Issue #259 for details
+                     *
                     PackageManager pm = mContext.getPackageManager();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
                             pm.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)) {
                         isStrongBoxBacked = true;
                         builder.setIsStrongBoxBacked(true);
                     }
+                     */
                     kpg.initialize(builder.build());
                     kpg.generateKeyPair();
                     Log.i(TAG, "AuthKey created, strongBoxBacked=" + isStrongBoxBacked);
@@ -1447,8 +1475,12 @@ class CredentialData {
 
         // We've found the key with lowest use count... so if this is beyond maximum uses
         // so are all the other ones. So fail if we're not allowed to use exhausted keys.
-        if (candidate.mUseCount >= mAuthMaxUsesPerKey && !allowUsingExhaustedKeys) {
-            return null;
+        if (candidate.mUseCount >= mAuthMaxUsesPerKey) {
+            if (!allowUsingExhaustedKeys) {
+                return null;
+            }
+
+            Log.i(TAG, "Using exhausted key.");
         }
 
         KeyStore.Entry entry = null;
@@ -1499,6 +1531,9 @@ class CredentialData {
             KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
             ks.load(null);
             KeyStore.Entry entry = ks.getEntry(acpAlias, null);
+            if (entry == null) {
+                throw new CredentialInvalidatedException("Failed getting key used for credential");
+            }
             SecretKey secretKey = ((KeyStore.SecretKeyEntry) entry).getSecretKey();
 
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");

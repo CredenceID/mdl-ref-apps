@@ -2,35 +2,23 @@ package com.android.identity;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Base64;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.OptionalLong;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 
-import co.nstant.in.cbor.CborBuilder;
-import co.nstant.in.cbor.builder.ArrayBuilder;
-import co.nstant.in.cbor.builder.MapBuilder;
-import co.nstant.in.cbor.model.DataItem;
 import co.nstant.in.cbor.model.SimpleValue;
-import co.nstant.in.cbor.model.UnsignedInteger;
 
-public class QrEngagementHelper implements NfcApduRouter.Listener {
+public class QrEngagementHelper {
     private static final String TAG = "QrEngagementHelper";
 
     private final PresentationSession mPresentationSession;
     private final Context mContext;
     private final KeyPair mEphemeralKeyPair;
-    private final NfcApduRouter mNfcApduRouter;
     private final DataTransportOptions mOptions;
     private Listener mListener;
     private Executor mExecutor;
@@ -41,93 +29,30 @@ public class QrEngagementHelper implements NfcApduRouter.Listener {
     private byte[] mEncodedDeviceEngagement;
     private byte[] mEncodedHandover;
     private boolean mReportedDeviceConnecting;
-    private int mNumEngagementApdusReceived;
-    private int mNumDataTransferApdusReceived;
 
     public QrEngagementHelper(@NonNull Context context,
                               @NonNull PresentationSession presentationSession,
                               @NonNull List<ConnectionMethod> connectionMethods,
                               @NonNull DataTransportOptions options,
-                              @Nullable NfcApduRouter nfcApduRouter,
                               @NonNull Listener listener,
                               @NonNull Executor executor) {
         mContext = context;
         mPresentationSession = presentationSession;
         mListener = listener;
         mExecutor = executor;
-        mNfcApduRouter = nfcApduRouter;
-        if (mNfcApduRouter != null) {
-            mNfcApduRouter.addListener(this, executor);
-        }
         mEphemeralKeyPair = mPresentationSession.getEphemeralKeyPair();
-        mConnectionMethods = connectionMethods;
+        mConnectionMethods = ConnectionMethod.combine(connectionMethods);
         mOptions = options;
         startListening();
     }
 
     public void close() {
-        if (mNfcApduRouter != null) {
-            mNfcApduRouter.removeListener(this, mExecutor);
-        }
         mInhibitCallbacks = true;
         if (mTransports != null) {
             for (DataTransport transport : mTransports) {
                 transport.close();
             }
             mTransports = null;
-        }
-    }
-
-    @Override
-    public void onApduReceived(@NonNull byte[] aid, @NonNull byte[] apdu) {
-        Logger.d(TAG, String.format(Locale.US, "onApduReceived aid=%s apdu=%s",
-                Util.toHex(aid), Util.toHex(apdu)));
-        if (Arrays.equals(aid, NfcApduRouter.AID_FOR_TYPE_4_TAG_NDEF_APPLICATION)) {
-            mNumEngagementApdusReceived += 1;
-        } else if (Arrays.equals(aid, NfcApduRouter.AID_FOR_MDL_DATA_TRANSFER)) {
-            mNumDataTransferApdusReceived += 1;
-        }
-
-        Logger.d(TAG, String.format(Locale.US,
-                        "mNumEngagementApdusReceived=%d mNumDataTransferApdusReceived=%d",
-                        mNumEngagementApdusReceived, mNumDataTransferApdusReceived));
-
-        /*
-        // This is for the case of QR engagement to NFC data transfer... we have to be
-        // careful and only react on the SELECT APPLICATION command if we received no
-        // previous APDUs for the engagement service.
-        //
-        if (mNumEngagementApdusReceived == 0 && mNumDataTransferApdusReceived == 1) {
-            switch (NfcUtil.nfcGetCommandType(apdu)) {
-                case NfcUtil.COMMAND_TYPE_SELECT_BY_AID:
-                    if (Arrays.equals(Arrays.copyOfRange(apdu, 5, 12),
-                            NfcApduRouter.AID_FOR_MDL_DATA_TRANSFER)) {
-                        for (DataTransport t : mTransports) {
-                            if (t instanceof DataTransportNfc) {
-                                Logger.d(TAG, "NFC data transfer AID selected");
-                                DataTransportNfc dataTransportNfc = (DataTransportNfc) t;
-                                // Hand over the APDU router to the NFC data transport
-                                mNfcApduRouter.removeListener(this, mExecutor);
-                                dataTransportNfc.setNfcApduRouter(mNfcApduRouter, mExecutor);
-                                mNfcApduRouter.sendResponseApdu(NfcUtil.STATUS_WORD_OK);
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-
-         */
-    }
-
-    @Override
-    public void onDeactivated(@NonNull byte[] aid, int reason) {
-        Logger.d(TAG, String.format(Locale.US, "onDeactivated aid=%s reason=%d",
-                Util.toHex(aid), reason));
-        if (Arrays.equals(aid, NfcApduRouter.AID_FOR_TYPE_4_TAG_NDEF_APPLICATION)) {
-            mNumEngagementApdusReceived = 0;
-        } else if (Arrays.equals(aid, NfcApduRouter.AID_FOR_MDL_DATA_TRANSFER)) {
-            mNumDataTransferApdusReceived = 0;
         }
     }
 
@@ -160,7 +85,7 @@ public class QrEngagementHelper implements NfcApduRouter.Listener {
         // ThreadPoolExecutor.
         //
         // In particular, it means we need locking around `mNumTransportsStillSettingUp`. We'll
-        // use the monitor for the PresentationHelper object for to achieve that.
+        // use the monitor for the DeviceRetrievalHelper object for to achieve that.
         //
         final QrEngagementHelper helper = this;
         mNumTransportsStillSettingUp = 0;
@@ -235,19 +160,14 @@ public class QrEngagementHelper implements NfcApduRouter.Listener {
         EngagementGenerator engagementGenerator =
                 new EngagementGenerator(mEphemeralKeyPair.getPublic(),
                         EngagementGenerator.ENGAGEMENT_VERSION_1_0);
-        for (ConnectionMethod cm : mConnectionMethods) {
-            engagementGenerator.addConnectionMethod(cm);
-        }
+        engagementGenerator.setConnectionMethods(mConnectionMethods);
         mEncodedDeviceEngagement = engagementGenerator.generate();
         mEncodedHandover = Util.cborEncode(SimpleValue.NULL);
-        if (Logger.isDebugEnabled()) {
-            Logger.d(TAG, "QR DE: " + Util.toHex(mEncodedDeviceEngagement));
-            Logger.d(TAG, "QR handover: " + Util.toHex(mEncodedHandover));
-        }
+        Logger.dCbor(TAG, "QR DE", mEncodedDeviceEngagement);
+        Logger.dCbor(TAG, "QR handover", mEncodedHandover);
 
         reportDeviceEngagementReady();
     }
-
 
     public @NonNull
     String getDeviceEngagementUriEncoded() {

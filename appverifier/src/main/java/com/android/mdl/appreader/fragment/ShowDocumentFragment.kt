@@ -1,3 +1,4 @@
+
 package com.android.mdl.appreader.fragment
 
 import android.content.res.Resources
@@ -38,6 +39,8 @@ class ShowDocumentFragment : Fragment() {
         private const val MICOV_DOCTYPE = "org.micov.1"
         private const val MDL_NAMESPACE = "org.iso.18013.5.1"
         private const val MICOV_ATT_NAMESPACE = "org.micov.attestation.1"
+        private const val EU_PID_DOCTYPE = "eu.europa.ec.eudiw.pid.1"
+        private const val EU_PID_NAMESPACE = "eu.europa.ec.eudiw.pid.1"
     }
 
     private var _binding: FragmentShowDocumentBinding? = null
@@ -174,7 +177,6 @@ class ShowDocumentFragment : Fragment() {
             val certPath =
                 simpleIssuerTrustStore.createCertificationTrustPath(doc.issuerCertificateChain.toList())
             val isDSTrusted = simpleIssuerTrustStore.validateCertificationTrustPath(certPath)
-            var commonName = ""
             // Use the issuer certificate chain if we could not build the certificate trust path
             val certChain = if (certPath?.isNotEmpty() == true) {
                 certPath
@@ -182,13 +184,25 @@ class ShowDocumentFragment : Fragment() {
                 doc.issuerCertificateChain.toList()
             }
 
-            certChain.last().issuerX500Principal.name.split(",").forEach { line ->
-                val (key, value) = line.split("=", limit = 2)
-                if (key == "CN") {
-                    commonName = "($value)"
+            val issuerItems = certChain.last().issuerX500Principal.name.split(",")
+            var cnFound = false
+            val commonName = StringBuffer()
+            for (issuerItem in issuerItems) {
+                when {
+                    issuerItem.contains("O=") -> {
+                        val (key, value) = issuerItem.split("=", limit = 2)
+                        commonName.append(value)
+                        cnFound = true
+                    }
+                    // Common Name value with ',' symbols would be treated as set of items
+                    // Append all parts of CN field if any before next issuer item
+                    cnFound && !issuerItem.contains("=") -> commonName.append(", $issuerItem")
+                    // Ignore any next issuer items only after we've collected required
+                    cnFound -> break
                 }
             }
-            sb.append("${getFormattedCheck(isDSTrusted)}Issuer’s DS Key Recognized: $commonName<br>")
+
+            sb.append("${getFormattedCheck(isDSTrusted)}Issuer’s DS Key Recognized: ($commonName)<br>")
             sb.append("${getFormattedCheck(doc.issuerSignedAuthenticated)}Issuer Signed Authenticated<br>")
             var macOrSignatureString = "MAC"
             if (doc.deviceSignedAuthenticatedViaSignature)
@@ -231,7 +245,7 @@ class ShowDocumentFragment : Fragment() {
                 for (elem in doc.getIssuerEntryNames(ns)) {
                     val value: ByteArray = doc.getIssuerEntryData(ns, elem)
                     var valueStr: String
-                    if (doc.docType == MDL_DOCTYPE && ns == MDL_NAMESPACE && elem == "portrait") {
+                    if (isPortraitElement(doc.docType, ns, elem)) {
                         valueStr = String.format("(%d bytes, shown above)", value.size)
                         portraitBytes = doc.getIssuerEntryByteString(ns, elem)
                     } else if (doc.docType == MICOV_DOCTYPE && ns == MICOV_ATT_NAMESPACE && elem == "fac") {
@@ -242,6 +256,8 @@ class ShowDocumentFragment : Fragment() {
                     } else if (doc.docType == MDL_DOCTYPE && ns == MDL_NAMESPACE && elem == "signature_usual_mark") {
                         valueStr = String.format("(%d bytes, shown below)", value.size)
                         signatureBytes = doc.getIssuerEntryByteString(ns, elem)
+                    } else if (doc.docType == EU_PID_DOCTYPE && ns == EU_PID_NAMESPACE && elem == "biometric_template_finger") {
+                        valueStr = String.format("%d bytes", value.size)
                     } else {
                         valueStr = FormatUtil.cborPrettyPrint(value)
                     }
@@ -251,6 +267,16 @@ class ShowDocumentFragment : Fragment() {
             }
         }
         return sb.toString()
+    }
+
+    private fun isPortraitElement(
+        docType: String,
+        namespace: String?,
+        entryName: String?
+    ): Boolean {
+        val hasPortrait = docType == MDL_DOCTYPE || docType == EU_PID_DOCTYPE
+        val namespaceContainsPortrait = namespace == MDL_NAMESPACE || namespace == EU_PID_NAMESPACE
+        return hasPortrait && namespaceContainsPortrait && entryName == "portrait"
     }
 
     private fun Resources.Theme.attr(@AttrRes attribute: Int): TypedValue {

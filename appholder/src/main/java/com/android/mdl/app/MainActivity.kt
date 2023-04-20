@@ -4,12 +4,10 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.nfc.NfcAdapter
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.WindowManager.LayoutParams.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.core.view.GravityCompat
 import androidx.navigation.Navigation
 import androidx.navigation.findNavController
@@ -19,14 +17,17 @@ import androidx.navigation.ui.setupWithNavController
 import com.android.identity.OriginInfo
 import com.android.identity.OriginInfoWebsite
 import com.android.mdl.app.databinding.ActivityMainBinding
+import com.android.mdl.app.fragment.TransferDocumentFragment
+import com.android.mdl.app.util.log
+import com.android.mdl.app.util.logError
+import com.android.mdl.app.util.logInfo
+import com.android.mdl.app.util.logWarning
 import com.android.mdl.app.viewmodel.ShareDocumentViewModel
 import com.google.android.material.elevation.SurfaceColors
+import java.security.Security
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        private const val LOG_TAG = "MainActivity"
-    }
 
     private val viewModel: ShareDocumentViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -38,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        showWhenLockedAndTurnScreenOn()
         super.onCreate(savedInstanceState)
         val color = SurfaceColors.SURFACE_2.getColor(this)
         window.statusBarColor = color
@@ -47,6 +47,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setupDrawerLayout()
         setupNfc()
+        onNewIntent(intent)
+
+        Security.addProvider(BouncyCastleProvider())
     }
 
     private fun setupNfc() {
@@ -65,15 +68,6 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(this, navController, binding.dlMainDrawer)
     }
 
-    private fun showWhenLockedAndTurnScreenOn() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        } else {
-            window.addFlags(FLAG_SHOW_WHEN_LOCKED or FLAG_TURN_SCREEN_ON)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
@@ -86,7 +80,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        Log.d(LOG_TAG, "New intent on Activity $intent")
+        log("New intent on Activity $intent")
 
         if (intent == null) {
             return
@@ -102,22 +96,26 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (mdocUri == null) {
-            Log.e(LOG_TAG, "No mdoc:// URI")
+            logError("No mdoc:// URI")
             return
         }
-        if (mdocReferrerUri == null) {
-            Log.e(LOG_TAG, "No referrer URI")
-            return
-        }
-
-        Log.i(LOG_TAG, "uri: $mdocUri")
-        Log.i(LOG_TAG, "referrer: $mdocReferrerUri")
+        logInfo("uri: $mdocUri")
 
         val originInfos = ArrayList<OriginInfo>()
-        originInfos.add(OriginInfoWebsite(1, mdocReferrerUri))
+        if (mdocReferrerUri == null) {
+            logWarning("No referrer URI")
+            // TODO: maybe bail in the future if this isn't set.
+        } else {
+            logInfo("referrer: $mdocReferrerUri")
+            originInfos.add(OriginInfoWebsite(1, mdocReferrerUri))
+        }
+
         viewModel.startPresentationReverseEngagement(mdocUri, originInfos)
         val navController = findNavController(R.id.nav_host_fragment)
-        navController.navigate(R.id.transferDocumentFragment)
+        navController.navigate(
+            R.id.transferDocumentFragment,
+            bundleOf(TransferDocumentFragment.CLOSE_AFTER_SERVING_KEY to true)
+        )
     }
 
     override fun onSupportNavigateUp(): Boolean {

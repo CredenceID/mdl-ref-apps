@@ -1,5 +1,6 @@
 package com.android.mdl.app.authconfirmation
 
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -43,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.mdl.app.R
-import com.android.mdl.app.authconfirmation.ConfirmationSheetData.DocumentProperty
+import com.android.mdl.app.authconfirmation.ConfirmationSheetData.DocumentElement
 import com.android.mdl.app.theme.HolderAppTheme
 
 @Composable
@@ -53,7 +54,7 @@ fun ConfirmationSheet(
     isTrustedReader: Boolean = false,
     isSendingInProgress: Boolean = false,
     sheetData: List<ConfirmationSheetData> = emptyList(),
-    onPropertyToggled: (namespace: String, property: String) -> Unit = { _, _ -> },
+    onElementToggled: (element: RequestedElement) -> Unit = { },
     onConfirm: () -> Unit = {},
     onCancel: () -> Unit = {}
 ) {
@@ -76,7 +77,8 @@ fun ConfirmationSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(16.dp))
         Box(
@@ -84,7 +86,7 @@ fun ConfirmationSheet(
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
         ) {
-            DocumentProperties(sheetData, onPropertyToggled)
+            DocumentElements(sheetData, onElementToggled)
             if (isSendingInProgress) {
                 LoadingIndicator(
                     modifier = Modifier
@@ -136,7 +138,7 @@ private fun TrustedReaderCheck(
                 modifier = Modifier.size(24.dp),
                 imageVector = Icons.Default.Check,
                 contentDescription = "",
-                tint = MaterialTheme.colorScheme.onPrimary
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -164,29 +166,26 @@ private fun DocumentTitle(
 @Composable
 private fun ChipsRow(
     modifier: Modifier = Modifier,
-    namespace: String,
-    left: DocumentProperty,
-    right: DocumentProperty?,
-    onPropertyToggled: (namespace: String, property: String) -> Unit
+    left: DocumentElement,
+    right: DocumentElement?,
+    onElementToggled: (element: RequestedElement) -> Unit
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         val chipModifier = if (right != null) Modifier.weight(1f) else Modifier
-        PropertyChip(
+        ElementChip(
             modifier = chipModifier,
-            property = left,
-            namespace = namespace,
-            onPropertyToggled = onPropertyToggled
+            documentElement = left,
+            onElementToggled = onElementToggled
         )
         right?.let {
             Spacer(modifier = Modifier.width(8.dp))
-            PropertyChip(
+            ElementChip(
                 modifier = chipModifier,
-                property = right,
-                namespace = namespace,
-                onPropertyToggled = onPropertyToggled
+                documentElement = right,
+                onElementToggled = onElementToggled
             )
         }
     }
@@ -194,11 +193,10 @@ private fun ChipsRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PropertyChip(
+private fun ElementChip(
     modifier: Modifier = Modifier,
-    property: DocumentProperty,
-    namespace: String,
-    onPropertyToggled: (namespace: String, property: String) -> Unit
+    documentElement: DocumentElement,
+    onElementToggled: (element: RequestedElement) -> Unit
 ) {
     var isChecked by remember { mutableStateOf(true) }
     FilterChip(
@@ -206,9 +204,9 @@ private fun PropertyChip(
         selected = isChecked,
         onClick = {
             isChecked = !isChecked
-            onPropertyToggled(namespace, property.propertyValue)
+            onElementToggled(documentElement.requestedElement)
         },
-        label = { Text(text = property.displayName) },
+        label = { Text(text = documentElement.displayName) },
         leadingIcon = {
             AnimatedVisibility(visible = isChecked) {
                 Icon(
@@ -223,9 +221,9 @@ private fun PropertyChip(
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-private fun DocumentProperties(
+private fun DocumentElements(
     sheetData: List<ConfirmationSheetData>,
-    onPropertyToggled: (namespace: String, property: String) -> Unit
+    onElementToggled: (element: RequestedElement) -> Unit
 ) {
     LazyColumn(modifier = Modifier.focusGroup()) {
         sheetData.forEach { document ->
@@ -240,7 +238,7 @@ private fun DocumentProperties(
                     document = document
                 )
             }
-            val grouped = document.properties.chunked(2).map { pair ->
+            val grouped = document.elements.chunked(2).map { pair ->
                 if (pair.size == 1) Pair(pair.first(), null)
                 else Pair(pair.first(), pair.last())
             }
@@ -250,10 +248,9 @@ private fun DocumentProperties(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    namespace = document.namespace,
                     left = items.first,
                     right = items.second,
-                    onPropertyToggled = onPropertyToggled
+                    onElementToggled = onElementToggled
                 )
             }
         }
@@ -311,6 +308,7 @@ private fun SheetActions(
 
 @Composable
 @Preview(name = "Default", showBackground = true)
+@Preview(name = "Default", showBackground = true, uiMode = UI_MODE_NIGHT_YES)
 private fun PreviewConfirmationSheet() {
     HolderAppTheme {
         ConfirmationSheet(
@@ -322,6 +320,7 @@ private fun PreviewConfirmationSheet() {
 
 @Composable
 @Preview(name = "Default With Trusted Reader", showBackground = true)
+@Preview(name = "Default With Trusted Reader", showBackground = true, uiMode = UI_MODE_NIGHT_YES)
 private fun PreviewConfirmationSheetTrustedReader() {
     HolderAppTheme {
         ConfirmationSheet(
@@ -333,7 +332,8 @@ private fun PreviewConfirmationSheetTrustedReader() {
 }
 
 @Composable
-@Preview(name = "Document With Trusted Reader", showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(name = "Document With Trusted Reader", showBackground = true)
+@Preview(name = "Document With Trusted Reader", showBackground = true, uiMode = UI_MODE_NIGHT_YES)
 private fun PreviewConfirmationSheetWithDocumentAndTrustedReader() {
     HolderAppTheme {
         ConfirmationSheet(
@@ -343,8 +343,7 @@ private fun PreviewConfirmationSheetWithDocumentAndTrustedReader() {
             sheetData = listOf(
                 ConfirmationSheetData(
                     documentName = "Driving Licence  |  mDL",
-                    namespace = "namespace",
-                    properties = (1..11).map { DocumentProperty("Property $it", "$it") }
+                    elements = (1..11).map { DocumentElement("Property $it", RequestedElement("$it", "namespace")) }
                 )
             )
         )
@@ -353,6 +352,7 @@ private fun PreviewConfirmationSheetWithDocumentAndTrustedReader() {
 
 @Composable
 @Preview(name = "Sending progress", showBackground = true)
+@Preview(name = "Sending progress", showBackground = true, uiMode = UI_MODE_NIGHT_YES)
 private fun PreviewConfirmationSendingProgress() {
     HolderAppTheme {
         ConfirmationSheet(
@@ -362,8 +362,7 @@ private fun PreviewConfirmationSendingProgress() {
             sheetData = listOf(
                 ConfirmationSheetData(
                     documentName = "Driving Licence  |  mDL",
-                    namespace = "namespace",
-                    properties = (1..11).map { DocumentProperty("Property $it", "$it") }
+                    elements = (1..11).map { DocumentElement("Property $it", RequestedElement("$it", "namespace")) }
                 )
             )
         )

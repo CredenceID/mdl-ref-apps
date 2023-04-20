@@ -1,9 +1,9 @@
 package com.android.mdl.app.authconfirmation
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +19,8 @@ import androidx.navigation.fragment.navArgs
 import com.android.mdl.app.R
 import com.android.mdl.app.authprompt.UserAuthPromptBuilder
 import com.android.mdl.app.theme.HolderAppTheme
+import com.android.mdl.app.util.DocumentData
+import com.android.mdl.app.util.log
 import com.android.mdl.app.viewmodel.TransferDocumentViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
@@ -33,8 +35,8 @@ class AuthConfirmationFragment : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val propertiesToSign = viewModel.requestedProperties()
-        val sheetData = mapToConfirmationSheetData(propertiesToSign)
+        val elementsToSign = viewModel.requestedElements()
+        val sheetData = mapToConfirmationSheetData(elementsToSign)
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -45,34 +47,48 @@ class AuthConfirmationFragment : BottomSheetDialogFragment() {
                         isTrustedReader = arguments.readerIsTrusted,
                         isSendingInProgress = isSendingInProgress.value,
                         sheetData = sheetData,
-                        onPropertyToggled = { namespace, property ->
-                            viewModel.toggleSignedProperty(namespace, property)
-                        },
+                        onElementToggled = { element -> viewModel.toggleSignedElement(element) },
                         onConfirm = { sendResponse() },
-                        onCancel = { dismiss() }
+                        onCancel = {
+                            dismiss()
+                            cancelAuthorization()
+                        }
                     )
                 }
             }
         }
     }
 
+    override fun onCancel(dialog: DialogInterface) {
+        cancelAuthorization()
+    }
+
+    private fun cancelAuthorization() {
+        viewModel.onAuthenticationCancelled()
+    }
+
     private fun mapToConfirmationSheetData(
-        propertiesToSign: List<RequestedDocumentData>
+        elementsToSign: List<RequestedDocumentData>
     ): List<ConfirmationSheetData> {
-        return propertiesToSign.map { documentData ->
+        return elementsToSign.map { documentData ->
             viewModel.addDocumentForSigning(documentData)
-            val properties = documentData.requestedProperties.map { property ->
-                viewModel.toggleSignedProperty(documentData.namespace, property)
-                val displayName = stringValueFor(property)
-                ConfirmationSheetData.DocumentProperty(displayName, property)
+            val elements = documentData.requestedElements.map { element ->
+                viewModel.toggleSignedElement(element)
+                val displayName = stringValueFor(element.namespace, element.value)
+                ConfirmationSheetData.DocumentElement(displayName, element)
             }
-            ConfirmationSheetData(documentData.nameTypeTitle(), documentData.namespace, properties)
+            ConfirmationSheetData(documentData.userReadableName, elements)
         }
     }
 
-    private fun stringValueFor(property: String): String {
-        val identifier = resources.getIdentifier(property, "string", requireContext().packageName)
-        return if (identifier != 0) getString(identifier) else property
+    private fun stringValueFor(namespace: String, element: String): String {
+        val requested = if (element == "portrait") portraitFor(namespace) else element
+        val identifier = resources.getIdentifier(requested, "string", requireContext().packageName)
+        return if (identifier != 0) getString(identifier) else element
+    }
+
+    private fun portraitFor(namespace: String): String {
+        return if (namespace == DocumentData.EU_PID_NAMESPACE) "facial_portrait" else "portrait"
     }
 
     private fun sendResponse() {
@@ -118,7 +134,7 @@ class AuthConfirmationFragment : BottomSheetDialogFragment() {
             findNavController().navigateUp()
         } catch (e: Exception) {
             val message = "Send response error: ${e.message}"
-            Log.e(LOG_TAG, message, e)
+            log(message, e)
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
     }
@@ -131,9 +147,5 @@ class AuthConfirmationFragment : BottomSheetDialogFragment() {
 
     private fun authenticationFailed() {
         viewModel.closeConnection()
-    }
-
-    private companion object {
-        private const val LOG_TAG = "AuthConfirmationFragment"
     }
 }

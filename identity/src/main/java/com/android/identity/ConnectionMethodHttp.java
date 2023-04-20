@@ -23,7 +23,7 @@ import co.nstant.in.cbor.model.Number;
  * Connection method for HTTP connections.
  */
 public class ConnectionMethodHttp extends ConnectionMethod {
-    private static final String TAG = "ConnectionOptionsRestApi";
+    private static final String TAG = "ConnectionMethodRestApi";   // limit to <= 23 chars
     private final String mUri;
 
     static final int METHOD_TYPE = 4;
@@ -146,8 +146,8 @@ public class ConnectionMethodHttp extends ConnectionMethod {
                 .build().get(0);
     }
 
-    @Override @NonNull
-    Pair<NdefRecord, byte[]> toNdefRecord() {
-        throw new IllegalStateException("NDEF records for this connection method is not defined");
+    @Override @Nullable
+    Pair<NdefRecord, byte[]> toNdefRecord(@NonNull List<String> auxiliaryReferences, boolean isForHandoverSelect) {
+        return null;
     }
 }

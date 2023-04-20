@@ -16,14 +16,17 @@
 
 package com.android.mdl.app.util
 
+import android.content.Intent
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.navigation.NavDeepLinkBuilder
 import com.android.identity.DataTransport
-import com.android.identity.NfcApduRouter
 import com.android.identity.NfcEngagementHelper
-import com.android.identity.PresentationHelper
+import com.android.identity.DeviceRetrievalHelper
 import com.android.identity.PresentationSession
+import com.android.mdl.app.MainActivity
 import com.android.mdl.app.R
 import com.android.mdl.app.transfer.Communication
 import com.android.mdl.app.transfer.ConnectionSetup
@@ -31,27 +34,30 @@ import com.android.mdl.app.transfer.CredentialStore
 import com.android.mdl.app.transfer.SessionSetup
 import com.android.mdl.app.transfer.TransferManager
 
+
 class NfcEngagementHandler : HostApduService() {
 
     private lateinit var engagementHelper: NfcEngagementHelper
     private lateinit var session: PresentationSession
     private lateinit var communication: Communication
     private lateinit var transferManager: TransferManager
-    private var presentation: PresentationHelper? = null
-
-    private val nfcApduRouter: NfcApduRouter = object : NfcApduRouter() {
-        override fun sendResponseApdu(responseApdu: ByteArray) {
-            this@NfcEngagementHandler.sendResponseApdu(responseApdu)
-        }
-    }
+    private var presentation: DeviceRetrievalHelper? = null
 
     private val nfcEngagementListener = object : NfcEngagementHelper.Listener {
 
         override fun onDeviceConnecting() {
             log("Engagement Listener: Device Connecting. Launching Transfer Screen")
+            val launchAppIntent = Intent(applicationContext, MainActivity::class.java)
+            launchAppIntent.action = Intent.ACTION_VIEW
+            launchAppIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            launchAppIntent.addCategory(Intent.CATEGORY_DEFAULT)
+            launchAppIntent.addCategory(Intent.CATEGORY_BROWSABLE)
+            applicationContext.startActivity(launchAppIntent)
+
             val pendingIntent = NavDeepLinkBuilder(applicationContext)
                 .setGraph(R.navigation.navigation_graph)
                 .setDestination(R.id.transferDocumentFragment)
+                .setComponentName(MainActivity::class.java)
                 .createPendingIntent()
             pendingIntent.send(applicationContext, 0, null)
             transferManager.updateStatus(TransferStatus.CONNECTING)
@@ -64,7 +70,7 @@ class NfcEngagementHandler : HostApduService() {
             }
 
             log("Engagement Listener: Device Connected via NFC")
-            val builder = PresentationHelper.Builder(
+            val builder = DeviceRetrievalHelper.Builder(
                 applicationContext,
                 presentationListener,
                 applicationContext.mainExecutor(),
@@ -85,10 +91,11 @@ class NfcEngagementHandler : HostApduService() {
         override fun onError(error: Throwable) {
             log("Engagement Listener: onError -> ${error.message}")
             transferManager.updateStatus(TransferStatus.ERROR)
+            engagementHelper.close()
         }
     }
 
-    private val presentationListener = object : PresentationHelper.Listener {
+    private val presentationListener = object : DeviceRetrievalHelper.Listener {
 
         override fun onDeviceRequest(deviceRequestBytes: ByteArray) {
             log("Presentation Listener: OnDeviceRequest")
@@ -109,42 +116,52 @@ class NfcEngagementHandler : HostApduService() {
 
     override fun onCreate() {
         super.onCreate()
+        log("onCreate")
         session = SessionSetup(CredentialStore(applicationContext)).createSession()
         communication = Communication.getInstance(applicationContext)
         transferManager = TransferManager.getInstance(applicationContext)
         transferManager.setCommunication(session, communication)
         val connectionSetup = ConnectionSetup(applicationContext)
-        engagementHelper = NfcEngagementHelper(
+        val builder = NfcEngagementHelper.Builder(
             applicationContext,
             session,
-            connectionSetup.getConnectionMethods(),
             connectionSetup.getConnectionOptions(),
-            nfcApduRouter,
             nfcEngagementListener,
-            applicationContext.mainExecutor()
-        )
+            applicationContext.mainExecutor())
+        if (PreferencesHelper.shouldUseStaticHandover()) {
+            builder.useStaticHandover(connectionSetup.getConnectionMethods())
+        } else {
+            builder.useNegotiatedHandover()
+        }
+        engagementHelper = builder.build()
     }
 
     override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray? {
         log("processCommandApdu: Command-> ${FormatUtil.encodeToString(commandApdu)}")
-        nfcApduRouter.addReceivedApdu(AID_FOR_TYPE_4_TAG_NDEF_APPLICATION, commandApdu)
-        return null
+        return engagementHelper.nfcProcessCommandApdu(commandApdu)
     }
 
     override fun onDeactivated(reason: Int) {
         log("onDeactivated: reason-> $reason")
-        nfcApduRouter.addDeactivated(AID_FOR_TYPE_4_TAG_NDEF_APPLICATION, reason)
-    }
+        engagementHelper.nfcOnDeactivated(reason)
 
-    companion object {
-        private val AID_FOR_TYPE_4_TAG_NDEF_APPLICATION: ByteArray = byteArrayOf(
-            0xD2.toByte(),
-            0x76.toByte(),
-            0x00.toByte(),
-            0x00.toByte(),
-            0x85.toByte(),
-            0x01.toByte(),
-            0x01.toByte()
-        )
+        // We need to close the NfcEngagementHelper but if we're doing it as the reader moves
+        // out of the field, it's too soon as it may take a couple of seconds to establish
+        // the connection, triggering onDeviceConnected() callback above.
+        //
+        // In fact, the reader _could_ actually take a while to establish the connection...
+        // for example the UI in the mdoc doc reader might have the operator pick the
+        // transport if more than one is offered. In fact this is exactly what we do in
+        // our mdoc reader.
+        //
+        // So we give the reader 15 seconds to do this...
+        //
+        val timeoutSeconds = 15
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (presentation == null) {
+                logWarning("reader didn't connect inside $timeoutSeconds seconds, closing")
+                engagementHelper.close()
+            }
+        }, timeoutSeconds*1000L)
     }
 }

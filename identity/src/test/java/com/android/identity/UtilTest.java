@@ -598,6 +598,29 @@ public class UtilTest {
     }
 
     @Test
+    public void coseKeyEncoding() throws Exception {
+        // This checks the encoding of X and Y are encoded as specified in
+        // Section 2.3.5 Field-Element-to-Octet-String Conversion of
+        // SEC 1: Elliptic Curve Cryptography (https://www.secg.org/sec1-v2.pdf).
+        assertEquals("{\n" +
+                        "  1 : 2,\n" +
+                        "  -1 : 1,\n" +
+                        "  -2 : [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, " +
+                                "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, " +
+                                "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, " +
+                                "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01],\n" +
+                        "  -3 : [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, " +
+                                "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, " +
+                                "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, " +
+                                "0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02]\n" +
+                        "}",
+                Util.cborPrettyPrint(Util.cborBuildCoseKey(
+                        Util.getPublicKeyFromIntegers(
+                                BigInteger.valueOf(1),
+                                BigInteger.valueOf(2)))));
+    }
+
+    @Test
     public void replaceLineTest() {
         assertEquals("foo",
                 Util.replaceLine("Hello World", 0, "foo"));
@@ -641,7 +664,7 @@ public class UtilTest {
                 .put("elementIdentifier", "foo")
                 .end()
                 .build().get(0);
-        encoded = Util.cborEncodeWithoutCanonicalizing(di);
+        encoded = Util.cborEncode(di);
         assertEquals("{\n" +
                 "  'random' : [0x01, 0x02, 0x03],\n" +
                 "  'digestID' : 42,\n" +
@@ -665,7 +688,7 @@ public class UtilTest {
                 .put(new UnicodeString("elementValue"), SimpleValue.NULL)
                 .end()
                 .build().get(0);
-        encoded = Util.cborEncodeWithoutCanonicalizing(di);
+        encoded = Util.cborEncode(di);
         assertEquals("{\n" +
                 "  'digestID' : 42,\n" +
                 "  'random' : [0x01, 0x02, 0x03],\n" +

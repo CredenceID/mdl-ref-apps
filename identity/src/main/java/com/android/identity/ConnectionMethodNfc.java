@@ -14,7 +14,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.List;
 
 import co.nstant.in.cbor.CborBuilder;
@@ -116,7 +115,8 @@ public class ConnectionMethodNfc extends ConnectionMethod {
     }
 
     static @Nullable
-    ConnectionMethod fromNdefRecord(@NonNull NdefRecord record) {
+    ConnectionMethodNfc fromNdefRecord(@NonNull NdefRecord record,
+                                       boolean isForHandoverSelect) {
         ByteBuffer payload = ByteBuffer.wrap(record.getPayload()).order(ByteOrder.LITTLE_ENDIAN);
         int version = payload.get();
         if (version != 0x01) {
@@ -195,8 +195,8 @@ public class ConnectionMethodNfc extends ConnectionMethod {
         }
     }
 
-    @Override @NonNull
-    Pair<NdefRecord, byte[]> toNdefRecord() {
+    @Override @Nullable
+    Pair<NdefRecord, byte[]> toNdefRecord(@NonNull List<String> auxiliaryReferences, boolean isForHandoverSelect) {
         byte[] carrierDataReference = "nfc".getBytes(UTF_8);
 
         // This is defined by ISO 18013-5 8.2.2.2 Alternative Carrier Record for device
@@ -208,7 +208,7 @@ public class ConnectionMethodNfc extends ConnectionMethod {
         encodeInt(0x02, (int) mResponseDataFieldMaxLength, baos);
         byte[] oobData = baos.toByteArray();
 
-        NdefRecord record = new NdefRecord((short) 0x02, // type = RFC 2046 (MIME)
+        NdefRecord record = new NdefRecord(NdefRecord.TNF_EXTERNAL_TYPE,
                 "iso.org:18013:nfc".getBytes(UTF_8),
                 carrierDataReference,
                 oobData);
@@ -223,10 +223,14 @@ public class ConnectionMethodNfc extends ConnectionMethod {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        baos.write(0x01); // Number of auxiliary references
-        byte[] auxReference = "mdoc".getBytes(UTF_8);
-        baos.write(auxReference.length);  // Length of auxiliary reference 0 data
-        baos.write(auxReference, 0, auxReference.length);
+        baos.write(auxiliaryReferences.size()); // Number of auxiliary references
+        for (String auxRef : auxiliaryReferences) {
+            // Each auxiliary reference consists of a single byte for the length and then as
+            // many bytes for the reference itself.
+            byte[] auxRefUtf8 = auxRef.getBytes(UTF_8);
+            baos.write(auxRefUtf8.length);
+            baos.write(auxRefUtf8, 0, auxRefUtf8.length);
+        }
         byte[] acRecordPayload = baos.toByteArray();
 
         return new Pair<>(record, acRecordPayload);

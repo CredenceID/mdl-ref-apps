@@ -18,7 +18,6 @@ package com.android.identity;
 
 import android.content.Context;
 import android.security.keystore.KeyProperties;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +30,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequenceGenerator;
+import org.bouncycastle.util.BigIntegers;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -77,7 +77,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Queue;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -172,16 +171,6 @@ class Util {
         return sb.toString();
     }
 
-    static void dumpHex(@NonNull String tag, @NonNull String message,
-            @NonNull byte[] bytes) {
-        Log.i(tag, message + " (" + bytes.length + " bytes)");
-        final int chunkSize = 1024;
-        for (int offset = 0; offset < bytes.length; offset += chunkSize) {
-            String s = toHex(bytes, offset, Math.min(bytes.length, offset + chunkSize));
-            Log.i(tag, "data: " + s);
-        }
-    }
-
     static @NonNull
     String base16(@NonNull byte[] bytes) {
         return toHex(bytes).toUpperCase(Locale.ROOT);
@@ -189,19 +178,6 @@ class Util {
 
     static @NonNull
     byte[] cborEncode(@NonNull DataItem dataItem) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            new CborEncoder(baos).encode(dataItem);
-        } catch (CborException e) {
-            // This should never happen and we don't want cborEncode() to throw since that
-            // would complicate all callers. Log it instead.
-            throw new IllegalStateException("Unexpected failure encoding data", e);
-        }
-        return baos.toByteArray();
-    }
-
-    static @NonNull
-    byte[] cborEncodeWithoutCanonicalizing(@NonNull DataItem dataItem) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             new CborEncoder(baos).nonCanonical().encode(dataItem);
@@ -723,11 +699,10 @@ class Util {
                 detachedContent);
 
         try {
-            // Use BouncyCastle provider for verification since it supports a lot more curves than
-            // the default provider, including the brainpool curves
-            //
-            Signature verifier = Signature.getInstance(signature,
-                    new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            // Using the default provider here. If BounceyCastle is to be used it is up to client
+            // to register that provider before hand.
+            // https://docs.oracle.com/javase/7/docs/api/java/security/Security.html#addProvider(java.security.Provider)
+            Signature verifier = Signature.getInstance(signature);
             verifier.initVerify(publicKey);
             verifier.update(toBeSigned);
             return verifier.verify(derSignature);
@@ -966,14 +941,39 @@ class Util {
         return ret;
     }
 
+    /* Encodes an integer according to Section 2.3.5 Field-Element-to-Octet-String Conversion
+     * of SEC 1: Elliptic Curve Cryptography (https://www.secg.org/sec1-v2.pdf).
+     */
+    static @NonNull
+    byte[] sec1EncodeFieldElementAsOctetString(int octetStringSize, BigInteger fieldValue) {
+        return BigIntegers.asUnsignedByteArray(octetStringSize, fieldValue);
+    }
+
     static @NonNull
     DataItem cborBuildCoseKey(@NonNull PublicKey key) {
         ECPublicKey ecKey = (ECPublicKey) key;
         ECPoint w = ecKey.getW();
-        // X and Y are always positive so for interop we remove any leading zeroes
-        // inserted by the BigInteger encoder.
-        byte[] x = stripLeadingZeroes(w.getAffineX().toByteArray());
-        byte[] y = stripLeadingZeroes(w.getAffineY().toByteArray());
+        byte[] x = sec1EncodeFieldElementAsOctetString(32, w.getAffineX());
+        byte[] y = sec1EncodeFieldElementAsOctetString(32, w.getAffineY());
+        DataItem item = new CborBuilder()
+                .addMap()
+                .put(COSE_KEY_KTY, COSE_KEY_TYPE_EC2)
+                .put(COSE_KEY_EC2_CRV, COSE_KEY_EC2_CRV_P256)
+                .put(COSE_KEY_EC2_X, x)
+                .put(COSE_KEY_EC2_Y, y)
+                .end()
+                .build().get(0);
+        return item;
+    }
+
+    // Used for testing only, to create an invalid COSE_Key
+    static @NonNull
+    DataItem cborBuildCoseKeyWithMalformedYPoint(@NonNull PublicKey key) {
+        ECPublicKey ecKey = (ECPublicKey) key;
+        ECPoint w = ecKey.getW();
+        BigInteger malformedY = BigInteger.valueOf(42);
+        byte[] x = sec1EncodeFieldElementAsOctetString(32, w.getAffineX());
+        byte[] y = sec1EncodeFieldElementAsOctetString(32, malformedY);
         DataItem item = new CborBuilder()
                 .addMap()
                 .put(COSE_KEY_KTY, COSE_KEY_TYPE_EC2)
@@ -1113,6 +1113,13 @@ class Util {
         }
         byte[] encodedX = cborMapExtractByteString(coseKey, COSE_KEY_EC2_X);
         byte[] encodedY = cborMapExtractByteString(coseKey, COSE_KEY_EC2_Y);
+
+        if (encodedX.length != 32) {
+            Logger.w(TAG, "Expected 32 bytes for X in COSE_Key, found " + encodedX.length);
+        }
+        if (encodedY.length != 32) {
+            Logger.w(TAG, "Expected 32 bytes for Y in COSE_Key, found " + encodedY.length);
+        }
 
         BigInteger x = new BigInteger(1, encodedX);
         BigInteger y = new BigInteger(1, encodedY);
@@ -1520,7 +1527,7 @@ class Util {
         issuerSignedItem.put(new UnicodeString("elementValue"), elementValue);
 
         // By using the non-canonical encoder the order is preserved.
-        return Util.cborEncodeWithoutCanonicalizing(issuerSignedItem);
+        return Util.cborEncode(issuerSignedItem);
     }
 
     static @NonNull
@@ -1815,7 +1822,7 @@ class Util {
         if (dataItem == null) {
             return -1;
         }
-        return cborEncodeWithoutCanonicalizing(dataItem).length;
+        return cborEncode(dataItem).length;
     }
 
     /**
@@ -1879,6 +1886,27 @@ class Util {
         // TODO: this just lexicographically compares the strings as ISO 18013-5 doesn't currently
         //   define how to compare version strings.
         return a.compareTo(b);
+    }
+
+    // Returns how many bytes should be used for values in the Server2Client and
+    // Client2Server characteristics.
+    static int
+    bleCalculateAttributeValueSize(int mtuSize) {
+        int characteristicValueSize;
+        if (mtuSize > 515) {
+            // Bluetooth Core specification Part F section 3.2.9 says "The maximum length of
+            // an attribute value shall be 512 octets". ... this is enforced in Android as
+            // of Android 13 with the effect being that the application only sees the first
+            // 512 bytes.
+            Logger.w(TAG, String.format(Locale.US, "MTU size is %d, using 512 as "
+                    + "characteristic value size", mtuSize));
+            characteristicValueSize = 512;
+        } else {
+            characteristicValueSize = mtuSize - 3;
+            Logger.w(TAG, String.format(Locale.US, "MTU size is %d, using %d as "
+                    + "characteristic value size", mtuSize, characteristicValueSize));
+        }
+        return characteristicValueSize;
     }
 
 }

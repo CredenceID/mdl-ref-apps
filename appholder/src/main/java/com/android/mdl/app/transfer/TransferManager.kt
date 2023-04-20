@@ -16,15 +16,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.android.identity.*
 import com.android.mdl.app.document.Document
+import com.android.mdl.app.documentdata.RequestEuPid
 import com.android.mdl.app.documentdata.RequestMdl
 import com.android.mdl.app.documentdata.RequestMicovAtt
 import com.android.mdl.app.documentdata.RequestMicovVtr
 import com.android.mdl.app.documentdata.RequestMvr
-import com.android.mdl.app.util.DocumentData
-import com.android.mdl.app.util.FormatUtil
-import com.android.mdl.app.util.PreferencesHelper
-import com.android.mdl.app.util.TransferStatus
-import com.android.mdl.app.util.log
+import com.android.mdl.app.util.*
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.WriterException
@@ -55,12 +52,6 @@ class TransferManager private constructor(private val context: Context) {
     private lateinit var communication: Communication
 
     private var transferStatusLd = MutableLiveData<TransferStatus>()
-
-    private val nfcApduRouter: NfcApduRouter = object : NfcApduRouter() {
-        override fun sendResponseApdu(responseApdu: ByteArray) {
-            hostApduService!!.sendResponseApdu(responseApdu)
-        }
-    }
 
     fun setCommunication(session: PresentationSession, communication: Communication) {
         this.session = session
@@ -115,9 +106,9 @@ class TransferManager private constructor(private val context: Context) {
             context = context,
             onConnecting = { transferStatusLd.value = TransferStatus.CONNECTING },
             onQrEngagementReady = { transferStatusLd.value = TransferStatus.QR_ENGAGEMENT_READY },
-            onPresentationReady = { session, presentation ->
+            onDeviceRetrievalHelperReady = { session, deviceRetrievalHelper ->
                 this.session = session
-                communication.setupPresentation(presentation)
+                communication.setupPresentation(deviceRetrievalHelper)
                 transferStatusLd.value = TransferStatus.CONNECTED
             },
             onNewDeviceRequest = { deviceRequest ->
@@ -169,15 +160,6 @@ class TransferManager private constructor(private val context: Context) {
         return bitmap
     }
 
-    fun nfcProcessCommandApdu(service: HostApduService, aid: ByteArray, commandApdu: ByteArray) {
-        hostApduService = service
-        nfcApduRouter.addReceivedApdu(aid, commandApdu)
-    }
-
-    fun nfcOnDeactivated(aid: ByteArray, reason: Int) {
-        nfcApduRouter.addDeactivated(aid, reason)
-    }
-
     @Throws(IllegalStateException::class)
     fun addDocumentToResponse(
         credentialName: String,
@@ -196,37 +178,43 @@ class TransferManager private constructor(private val context: Context) {
                 credentialDataRequestBuilder.setReaderSignature(readerAuth)
                 credentialDataRequestBuilder.setRequestMessage(requestMessage)
             }
-            it.getCredentialData(
-                credentialName,
-                credentialDataRequestBuilder.build()
-            )?.let { c ->
-                try {
-                    if (c.deviceSignedEntries.isUserAuthenticationNeeded ||
-                        c.issuerSignedEntries.isUserAuthenticationNeeded
-                    ) {
-                        return true
-                    }
-                    val staticAuthData: ByteArray = c.staticAuthenticationData
-                    val (first1, second1) = Utility.decodeStaticAuthData(staticAuthData)
+            try {
+                it.getCredentialData(
+                    credentialName,
+                    credentialDataRequestBuilder.build()
+                )?.let { c ->
+                    try {
+                        if (c.deviceSignedEntries.isUserAuthenticationNeeded ||
+                            c.issuerSignedEntries.isUserAuthenticationNeeded
+                        ) {
+                            return true
+                        }
+                        val staticAuthData: ByteArray = c.staticAuthenticationData
+                        val (first1, second1) = Utility.decodeStaticAuthData(staticAuthData)
 
-                    Log.d(LOG_TAG, "StaticAuthData " + FormatUtil.encodeToString(staticAuthData))
-                    response.addDocument(
-                        docType,
-                        c,
-                        first1,
-                        second1
-                    )
-                } catch (e: IllegalArgumentException) {
-                    e.printStackTrace()
-                } catch (e: NoAuthenticationKeyAvailableException) {
-                    e.printStackTrace()
-                } catch (e: InvalidReaderSignatureException) {
-                    e.printStackTrace()
-                } catch (e: EphemeralPublicKeyNotFoundException) {
-                    e.printStackTrace()
-                } catch (e: InvalidRequestMessageException) {
-                    e.printStackTrace()
+                        log("StaticAuthData " + FormatUtil.encodeToString(staticAuthData))
+                        response.addDocument(
+                            docType,
+                            c,
+                            first1,
+                            null,
+                            second1
+                        )
+                    } catch (e: IllegalArgumentException) {
+                        e.printStackTrace()
+                    } catch (e: NoAuthenticationKeyAvailableException) {
+                        e.printStackTrace()
+                    } catch (e: InvalidReaderSignatureException) {
+                        e.printStackTrace()
+                    } catch (e: EphemeralPublicKeyNotFoundException) {
+                        e.printStackTrace()
+                    } catch (e: InvalidRequestMessageException) {
+                        e.printStackTrace()
+                    }
                 }
+            } catch (e: NullPointerException) {
+                Log.e(LOG_TAG, "Error to get credential from session", e)
+                throw NoSuchElementException("Error to get credential from session - ${e.message}")
             }
         }
         return false
@@ -248,13 +236,13 @@ class TransferManager private constructor(private val context: Context) {
         qrCommunicationSetup?.close()
         transferStatusLd = MutableLiveData<TransferStatus>()
         destroy()
-        hasStarted = false
     }
 
     fun destroy() {
         qrCommunicationSetup = null
         reversedQrCommunicationSetup = null
         session = null
+        hasStarted = false
     }
 
     fun getCryptoObject(): BiometricPrompt.CryptoObject? {
@@ -262,7 +250,7 @@ class TransferManager private constructor(private val context: Context) {
             return session?.cryptoObject
         } catch (e: RuntimeException) {
             // Error when device doesn't have secure unlock
-            Log.e(LOG_TAG, "getCryptoObject: ${e.message}")
+            log("getCryptoObject: ${e.message}", e)
         }
         return null
     }
@@ -279,6 +267,8 @@ class TransferManager private constructor(private val context: Context) {
             RequestMvr.getFullItemsToRequest()
         } else if (DocumentData.MICOV_DOCTYPE == document.docType) {
             RequestMicovAtt.getFullItemsToRequest().plus(RequestMicovVtr.getFullItemsToRequest())
+        } else if (DocumentData.EU_PID_DOCTYPE == document.docType) {
+            RequestEuPid.getFullItemsToRequest()
         } else {
             throw IllegalArgumentException("Invalid docType to create request details ${document.docType}")
         }
@@ -312,7 +302,7 @@ class TransferManager private constructor(private val context: Context) {
                 mSession.getCredentialData(document.identityCredentialName, credentialRequest)
             return credentialData?.issuerSignedEntries
         } catch (e: UnsupportedOperationException) {
-            Log.e(LOG_TAG, "Presentation session not supported in this device - ${e.message}", e)
+            log("Presentation session not supported in this device - ${e.message}", e)
             return null
         }
     }
